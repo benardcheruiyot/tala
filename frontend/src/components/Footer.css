@@ -1,9 +1,12 @@
 /* Footer Styles */
 .footer {
-  color: var(--text-light);
-  padding: 1rem 0 1.25rem;
+  background-color: var(--primary-dark);
+  color: white;
+  padding: 1.5rem;
   text-align: center;
-  margin-top: auto;
+  margin-top: 2rem;
+  width: 100%;
+  border-radius: var(--radius);
 }
 
 .footer-links {
@@ -14,17 +17,17 @@
 }
 
 .footer-links a {
-  color: var(--text-light);
+  color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
   font-size: 0.9rem;
   transition: var(--transition);
 }
 
 .footer-links a:hover {
-  color: var(--primary);
+  color: white;
 }
 
 .footer p {
   font-size: 0.8rem;
-  opacity: 1;
+  opacity: 0.8;
 }
