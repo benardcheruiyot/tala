@@ -239,6 +239,8 @@ On every push, it will:
 5. Write `backend/.env` on the server from GitHub Secrets
 6. Install production dependencies on server
 7. Auto-install PM2 if missing and restart backend
+8. Auto-install and configure Nginx for `tala.mkopaji.com`
+9. Auto-provision or renew Let's Encrypt SSL
 
 Set these repository secrets in GitHub:
 
@@ -250,10 +252,12 @@ Set these repository secrets in GitHub:
 - `INTERSERVER_WEB_ROOT` - Server web root for frontend static files (example: `/home/username/public_html`)
 - `REACT_APP_API_URL` - Production API URL used at frontend build time (example: `https://tala.mkopaji.com/api`)
 - `BACKEND_ENV_FILE` - Full contents of production `backend/.env` (multiline secret)
+- `CERTBOT_EMAIL` - Email address for Let's Encrypt certificate registration
 
 Notes:
 
 - After secrets are set once, deployment is push-only from your side.
+- The Nginx automation assumes your SSH user has `sudo` access when not logging in as root.
 
 ## 🔒 Security Considerations
 
