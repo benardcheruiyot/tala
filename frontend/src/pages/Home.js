@@ -16,12 +16,11 @@ const Home = () => {
     setIsNavigating(true);
 
     Swal.fire({
-      title: 'Please Wait',
-      text: 'Preparing your application...',
+      html: '<div class="home-popup-spinner" role="status" aria-label="Loading"></div>',
       showConfirmButton: false,
       allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading();
+      customClass: {
+        popup: 'spinner-only-popup',
       },
     });
 
