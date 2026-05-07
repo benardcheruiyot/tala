@@ -17,6 +17,7 @@ class MpesaService {
           ? 'bfb279f9aa9bdbcf158e97dd71a467cd2e0542f31bff0b23062ad96057225ff7'
           : '')
     ).trim();
+    this.transactionType = String(process.env.MPESA_TRANSACTION_TYPE || 'CustomerPayBillOnline').trim();
     
     // Log M-Pesa configuration status
     this.isConfigured = this.isProperlyConfigured();
@@ -135,7 +136,7 @@ class MpesaService {
         BusinessShortCode: this.shortcode,
         Password: password,
         Timestamp: timestamp,
-        TransactionType: 'CustomerPayBillOnline',
+        TransactionType: this.transactionType,
         Amount: amount,
         PartyA: normalizedPhone,
         PartyB: this.shortcode,
