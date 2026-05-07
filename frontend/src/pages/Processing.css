@@ -1,9 +1,11 @@
 .processing-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: linear-gradient(135deg, #ffffff 0%, #e6fffa 100%);
   color: #1e293b;
+  padding: 0.75rem;
 }
 
 .processing-container {
@@ -15,6 +17,7 @@
   box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
   text-align: center;
   position: relative;
+  width: 100%;
 }
 
 .processing-container h1 {
@@ -173,21 +176,120 @@
 
 @media (max-width: 768px) {
   .processing-container {
-    margin: 1.5rem;
-    padding: 1.8rem;
+    margin: 0;
+    padding: 1.25rem 1rem;
   }
 
   .processing-container h1 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
+    margin-bottom: 0.85rem;
   }
 
   .processing-trust-seal {
     position: static;
-    margin: 0 auto 1.5rem;
+    margin: 0 auto 0.7rem;
     width: fit-content;
+    font-size: 0.72rem;
+    padding: 6px 10px;
   }
 
   .processing-trust-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0.85rem 0;
+  }
+
+  .processing-trust-item {
+    padding: 8px;
+    font-size: 0.72rem;
+  }
+
+  .processing-dots {
+    margin: 1rem 0 0.7rem;
+  }
+
+  .processing-message {
+    margin: 0.7rem 0;
+    font-size: 0.92rem;
+    min-height: 1.2rem;
+  }
+
+  .processing-progress-container {
+    margin: 0.95rem 0;
+  }
+
+  .processing-security-badge {
+    margin: 0.6rem 0;
+    padding: 6px 11px;
+    font-size: 0.74rem;
+  }
+
+  .processing-success {
+    margin: 0.8rem 0 0;
+    padding: 0.9rem 0.75rem;
+    border-radius: 10px;
+  }
+
+  .processing-success-check {
+    width: 42px;
+    height: 42px;
+    font-size: 1.1rem;
+    margin-bottom: 0.45rem;
+  }
+
+  .processing-success p {
+    font-size: 0.92rem;
+  }
+}
+
+@media (max-height: 760px) {
+  .processing-page {
+    padding: 0.45rem;
+  }
+
+  .processing-container {
+    padding: 1rem 0.85rem;
+  }
+
+  .processing-container h1 {
+    font-size: 1.1rem;
+    margin-bottom: 0.55rem;
+  }
+
+  .processing-dots {
+    margin: 0.7rem 0 0.45rem;
+  }
+
+  .processing-dot {
+    width: 10px;
+    height: 10px;
+  }
+
+  .processing-message {
+    margin: 0.45rem 0;
+    font-size: 0.86rem;
+  }
+
+  .processing-progress-container {
+    margin: 0.7rem 0;
+  }
+
+  .processing-trust-grid {
+    gap: 6px;
+    margin: 0.65rem 0;
+  }
+
+  .processing-trust-item {
+    padding: 7px;
+    font-size: 0.68rem;
+  }
+
+  .processing-success {
+    margin-top: 0.65rem;
+    padding: 0.75rem 0.65rem;
+  }
+
+  .processing-success p {
+    font-size: 0.84rem;
   }
 }
