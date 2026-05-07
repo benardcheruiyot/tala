@@ -14,17 +14,42 @@ const PORT = process.env.PORT || 5000;
 app.use(helmet());
 
 // CORS configuration
-const allowedOrigins = [
+const configuredOrigins = [
   process.env.FRONTEND_URL,
+  ...(process.env.FRONTEND_URLS || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+];
+
+const allowedOrigins = [
+  ...configuredOrigins,
   'http://localhost:3000',
   'http://127.0.0.1:3000',
-].filter(Boolean);
+  'https://talamkopo.vercel.app',
+  'https://talamkopoextrake.vercel.app',
+];
+
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  if (allowedOrigins.includes(origin)) return true;
+
+  // Optional wildcard for preview deployments when explicitly enabled.
+  if (
+    process.env.ALLOW_VERCEL_PREVIEWS === 'true' &&
+    /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin)
+  ) {
+    return true;
+  }
+
+  return false;
+};
 
 app.use(
   cors({
     credentials: true,
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (isAllowedOrigin(origin)) {
         callback(null, true);
         return;
       }
