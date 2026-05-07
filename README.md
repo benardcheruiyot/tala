@@ -233,14 +233,14 @@ A workflow is included at `.github/workflows/deploy-interserver.yml`.
 On every push, it will:
 
 1. Install backend and frontend dependencies
-2. Build the frontend using `REACT_APP_API_URL` from GitHub Secrets
+2. Build the frontend using the committed `frontend/.env`
 3. Upload build artifacts
 4. Deploy backend and frontend to InterServer over SSH
-5. Write `backend/.env` on the server from GitHub Secrets
+5. Deploy the committed `backend/.env` to the server
 6. Install production dependencies on server
 7. Auto-install PM2 if missing and restart backend
 8. Auto-install and configure Nginx for `tala.mkopaji.com`
-9. Auto-provision or renew Let's Encrypt SSL
+9. Auto-provision or renew Let's Encrypt SSL when DNS and `CERTBOT_EMAIL` are available
 
 Set these repository secrets in GitHub:
 
@@ -250,13 +250,12 @@ Set these repository secrets in GitHub:
 - `INTERSERVER_SSH_KEY` - Private key for SSH auth
 - `INTERSERVER_APP_DIR` - Server path for backend app files (example: `/home/username/apps/tala`)
 - `INTERSERVER_WEB_ROOT` - Server web root for frontend static files (example: `/home/username/public_html`)
-- `REACT_APP_API_URL` - Production API URL used at frontend build time (example: `https://tala.mkopaji.com/api`)
-- `BACKEND_ENV_FILE` - Full contents of production `backend/.env` (multiline secret)
-- `CERTBOT_EMAIL` - Email address for Let's Encrypt certificate registration
+- `CERTBOT_EMAIL` - Optional email address for Let's Encrypt certificate registration
 
 Notes:
 
 - After secrets are set once, deployment is push-only from your side.
+- The workflow now uses the tracked `.env` files in this repository for backend and frontend configuration.
 - The Nginx automation assumes your SSH user has `sudo` access when not logging in as root.
 
 ## 🔒 Security Considerations

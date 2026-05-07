@@ -30,8 +30,6 @@ jobs:
 
       - name: Build frontend
         working-directory: frontend
-        env:
-          REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
         run: npm run build
 
       - name: Upload backend artifact
@@ -41,7 +39,6 @@ jobs:
           path: |
             backend/**
             !backend/node_modules/**
-            !backend/.env
 
       - name: Upload frontend build artifact
         uses: actions/upload-artifact@v4
@@ -90,23 +87,15 @@ jobs:
           SSH_PORT: ${{ secrets.INTERSERVER_SSH_PORT }}
           APP_DIR: ${{ secrets.INTERSERVER_APP_DIR }}
           WEB_ROOT: ${{ secrets.INTERSERVER_WEB_ROOT }}
-          BACKEND_ENV_FILE: ${{ secrets.BACKEND_ENV_FILE }}
         run: |
-          if [ -z "$SSH_USER" ] || [ -z "$APP_DIR" ] || [ -z "$WEB_ROOT" ] || [ -z "$BACKEND_ENV_FILE" ]; then
-            echo "Missing deploy secrets. Set INTERSERVER_USER, INTERSERVER_APP_DIR, INTERSERVER_WEB_ROOT, and BACKEND_ENV_FILE."
+          if [ -z "$SSH_USER" ] || [ -z "$APP_DIR" ] || [ -z "$WEB_ROOT" ]; then
+            echo "Missing deploy secrets. Set INTERSERVER_USER, INTERSERVER_APP_DIR, and INTERSERVER_WEB_ROOT."
             exit 1
           fi
 
           ssh -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" "
             set -e
             mkdir -p '$APP_DIR/backend' '$WEB_ROOT'
-          "
-
-          BACKEND_ENV_B64=$(printf "%s" "$BACKEND_ENV_FILE" | base64 -w0)
-          ssh -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" "
-            set -e
-            echo '$BACKEND_ENV_B64' | base64 -d > '$APP_DIR/backend/.env'
-            chmod 600 '$APP_DIR/backend/.env'
           "
 
           rsync -az --delete -e "ssh -p ${SSH_PORT:-22}" \
@@ -148,8 +137,8 @@ jobs:
           WEB_ROOT: ${{ secrets.INTERSERVER_WEB_ROOT }}
           CERTBOT_EMAIL: ${{ secrets.CERTBOT_EMAIL }}
         run: |
-          if [ -z "$CERTBOT_EMAIL" ] || [ -z "$WEB_ROOT" ]; then
-            echo "Missing deploy secrets. Set CERTBOT_EMAIL and INTERSERVER_WEB_ROOT."
+          if [ -z "$WEB_ROOT" ]; then
+            echo "Missing deploy secrets. Set INTERSERVER_WEB_ROOT."
             exit 1
           fi
 
@@ -205,10 +194,18 @@ jobs:
             \$SUDO systemctl enable nginx
             \$SUDO systemctl restart nginx
 
-            if [ ! -d /etc/letsencrypt/live/tala.mkopaji.com ]; then
-              \$SUDO certbot --nginx --non-interactive --agree-tos --redirect -m '${CERTBOT_EMAIL}' -d tala.mkopaji.com
+            if [ -n '${CERTBOT_EMAIL}' ]; then
+              if getent ahosts tala.mkopaji.com >/dev/null 2>&1; then
+                if [ ! -d /etc/letsencrypt/live/tala.mkopaji.com ]; then
+                  \$SUDO certbot --nginx --non-interactive --agree-tos --redirect -m '${CERTBOT_EMAIL}' -d tala.mkopaji.com
+                else
+                  \$SUDO certbot renew --quiet || true
+                fi
+              else
+                echo 'Skipping certbot because tala.mkopaji.com does not resolve on the server yet.'
+              fi
             else
-              \$SUDO certbot renew --quiet || true
+              echo 'Skipping certbot because CERTBOT_EMAIL is not set.'
             fi
 
             \$SUDO nginx -t
