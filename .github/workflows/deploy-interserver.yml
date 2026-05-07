@@ -16,8 +16,8 @@ jobs:
       - name: Sync files to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
+          host: 69.169.97.136
+          username: root
           key: ${{ secrets.VPS_SSH_KEY }}
           source: "frontend/,backend/"
           target: "/var/www/tala.mkopaji.com"
@@ -26,8 +26,8 @@ jobs:
       - name: Restart backend and configure Nginx
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
+          host: 69.169.97.136
+          username: root
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e

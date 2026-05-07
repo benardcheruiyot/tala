@@ -237,11 +237,11 @@ It follows the same easy pattern as your previous app deployment:
 3. Restart backend with PM2
 4. Configure/restart Nginx
 
-Set these repository secrets in GitHub:
+Set this repository secret in GitHub:
 
-- `VPS_HOST` - Server IP or hostname
-- `VPS_USER` - SSH user
 - `VPS_SSH_KEY` - Private SSH key
+
+`VPS_HOST` and `VPS_USER` are now preconfigured in the workflow as `69.169.97.136` and `root` to keep deployment push-only.
 
 The workflow deploys to `/var/www/tala.mkopaji.com` and configures Nginx for:
 - `tala.mkopaji.com`
