@@ -25,7 +25,7 @@ const Home = () => {
         showConfirmButton: false,
         allowOutsideClick: false,
         allowEscapeKey: false,
-        timer: 1200,
+        timer: 1700,
         customClass: {
           popup: 'spinner-only-popup',
         },
