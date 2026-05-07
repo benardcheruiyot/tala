@@ -1,19 +1,45 @@
 // Home.js - Landing Page
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import './Home.css';
 
 const Home = () => {
   const navigate = useNavigate();
+  const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
     document.title = 'Tala Mkopo Extra';
   }, []);
 
-  const handleApplyNow = () => {
-    navigate('/eligibility');
+  const handleApplyNow = async () => {
+    if (isNavigating) return;
+
+    setIsNavigating(true);
+
+    try {
+      await Swal.fire({
+        html: '<div class="home-popup-spinner" role="status" aria-label="Loading"></div>',
+        showConfirmButton: false,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        timer: 700,
+        timerProgressBar: true,
+        customClass: {
+          popup: 'spinner-only-popup',
+          timerProgressBar: 'spinner-progress-bar',
+        },
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
+
+      navigate('/eligibility');
+    } finally {
+      setIsNavigating(false);
+    }
   };
 
   return (
@@ -57,7 +83,7 @@ const Home = () => {
           </div>
         </div>
 
-        <button className="btn-primary" onClick={handleApplyNow}>
+        <button className="btn-primary" onClick={handleApplyNow} disabled={isNavigating}>
           <span>Apply Now</span>
           <svg
             xmlns="http://www.w3.org/2000/svg"
