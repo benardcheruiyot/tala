@@ -1,5 +1,6 @@
 // Loan Controller
 const Loan = require('../models/Loan');
+const MpesaTransaction = require('../models/MpesaTransaction');
 const loanService = require('../services/loanService');
 const mpesaService = require('../services/mpesaService');
 const { AppError } = require('../middleware/errorHandler');
@@ -82,6 +83,15 @@ class LoanController {
         return next(new AppError(result.message, 400));
       }
 
+      await MpesaTransaction.create({
+        checkoutRequestId: result.checkoutRequestId,
+        merchantRequestId: result.merchantRequestId,
+        phone,
+        amount,
+        status: 'initiated',
+        rawResponse: result.rawResponse || null,
+      });
+
       res.status(200).json({
         success: true,
         reference: result.checkoutRequestId,
@@ -101,9 +111,17 @@ class LoanController {
 
       const result = await mpesaService.checkTransactionStatus(checkoutId);
 
+      await MpesaTransaction.updateByCheckoutRequestId(checkoutId, {
+        status: result.status,
+        resultCode: result.resultCode || null,
+        resultDescription: result.resultDescription || null,
+      });
+
       res.status(200).json({
         success: result.success,
         status: result.status,
+        resultCode: result.resultCode,
+        resultDescription: result.resultDescription,
       });
     } catch (error) {
       next(new AppError(error.message, 500));
@@ -121,7 +139,27 @@ class LoanController {
         });
       }
 
-      const { CheckoutRequestID, ResultCode } = Body.stkCallback;
+      const { CheckoutRequestID, MerchantRequestID, ResultCode, ResultDesc, CallbackMetadata } = Body.stkCallback;
+      const metadata = CallbackMetadata?.Item || [];
+
+      const getMetaValue = (name) => metadata.find((item) => item.Name === name)?.Value;
+      const receiptNumber = getMetaValue('MpesaReceiptNumber') || null;
+
+      const normalizedStatus =
+        ResultCode === 0
+          ? 'completed'
+          : ResultCode === 1032
+            ? 'cancelled'
+            : 'failed';
+
+      await MpesaTransaction.updateByCheckoutRequestId(CheckoutRequestID, {
+        merchantRequestId: MerchantRequestID || null,
+        status: normalizedStatus,
+        resultCode: String(ResultCode),
+        resultDescription: ResultDesc || null,
+        mpesaReceiptNumber: receiptNumber,
+        callbackData: Body.stkCallback,
+      });
 
       // ResultCode 0 = Success
       if (ResultCode === 0) {

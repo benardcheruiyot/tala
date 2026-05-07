@@ -271,6 +271,8 @@ class MpesaService {
 
       return {
         checkoutRequestId: response.CheckoutRequestID,
+        merchantRequestId: response.MerchantRequestID,
+        rawResponse: response,
         success: true,
       };
     } catch (error) {
@@ -337,10 +339,17 @@ class MpesaService {
       console.log('[M-Pesa Status] Response:', response);
 
       const isSuccess = response.ResultCode === '0';
+      const isPending = ['1', '1037', '1019'].includes(String(response.ResultCode || ''));
+      const isCancelled = String(response.ResultCode || '') === '1032';
+
+      let normalizedStatus = 'failed';
+      if (isSuccess) normalizedStatus = 'completed';
+      else if (isCancelled) normalizedStatus = 'cancelled';
+      else if (isPending) normalizedStatus = 'pending';
 
       return {
         success: isSuccess,
-        status: isSuccess ? 'completed' : 'pending',
+        status: normalizedStatus,
         resultCode: response.ResultCode,
         resultDescription: response.ResultDesc,
         mpesaReference: response.MerchantRequestID,

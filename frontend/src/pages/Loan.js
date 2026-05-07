@@ -233,6 +233,14 @@ const Loan = () => {
             }).then(() => {
               navigate('/dashboard');
             });
+          } else if (statusResult.status === 'failed' || statusResult.status === 'cancelled') {
+            clearInterval(pollInterval);
+            Swal.fire(
+              'Payment Not Completed',
+              statusResult.resultDescription || 'M-Pesa payment was not completed. Please try again.',
+              'warning'
+            );
+            setLoading(false);
           } else if (attempts >= maxAttempts) {
             clearInterval(pollInterval);
             Swal.fire(

@@ -10,7 +10,6 @@ import './Eligibility.css';
 const Eligibility = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const apiBaseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -43,7 +42,12 @@ const Eligibility = () => {
 
       // Check backend connectivity
       try {
-        await fetch(`${apiBaseUrl}/health`);
+        const healthUrl =
+          window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:5000/api/health'
+            : '/api/health';
+
+        await fetch(healthUrl);
       } catch (err) {
         throw new Error('Backend is unreachable. Please verify the API URL and server status.');
       }
