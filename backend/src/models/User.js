@@ -1,7 +1,7 @@
 // User Model
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { getJwtSecret } = require('../utils/jwtSecret');
+const { getJwtSecret, getJwtExpiresIn } = require('../utils/jwtSecret');
 
 // In-memory store for demo (replace with MongoDB in production)
 const users = new Map();
@@ -47,7 +47,7 @@ class User {
     return jwt.sign(
       { id: this.id, phone: this.phone_number },
       getJwtSecret(),
-      { expiresIn: process.env.JWT_EXPIRE }
+      { expiresIn: getJwtExpiresIn() }
     );
   }
 
