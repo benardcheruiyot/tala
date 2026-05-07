@@ -110,23 +110,24 @@ class LoanController {
       }
 
       const existingTransaction = await MpesaTransaction.findByCheckoutRequestId(checkoutId);
-      if (existingTransaction?.status === 'expired') {
+      const terminalStatuses = ['completed', 'failed', 'cancelled', 'expired'];
+
+      // Prefer callback-confirmed terminal state to avoid losing a successful payment
+      // when an STK query response is delayed or temporarily inconsistent.
+      if (existingTransaction && terminalStatuses.includes(existingTransaction.status)) {
         return res.status(200).json({
-          success: false,
-          status: 'expired',
-          resultCode: existingTransaction.resultCode || 'TIMEOUT',
-          resultDescription:
-            existingTransaction.resultDescription ||
-            'Transaction expired after 5 minutes without confirmation.',
+          success: existingTransaction.status === 'completed',
+          status: existingTransaction.status,
+          resultCode: existingTransaction.resultCode || null,
+          resultDescription: existingTransaction.resultDescription || null,
         });
       }
 
       const result = await mpesaService.checkTransactionStatus(checkoutId);
 
-      const normalizedStatus =
-        result.status === 'pending' && existingTransaction
-          ? (await MpesaTransaction.findByCheckoutRequestId(checkoutId))?.status || result.status
-          : result.status;
+      const refreshedTransaction = await MpesaTransaction.findByCheckoutRequestId(checkoutId);
+      const fallbackStatus = refreshedTransaction?.status || existingTransaction?.status || 'pending';
+      const normalizedStatus = result.status || fallbackStatus;
 
       await MpesaTransaction.updateByCheckoutRequestId(checkoutId, {
         status: normalizedStatus,
@@ -137,11 +138,11 @@ class LoanController {
       res.status(200).json({
         success: normalizedStatus === 'completed',
         status: normalizedStatus,
-        resultCode: result.resultCode,
+        resultCode: result.resultCode || refreshedTransaction?.resultCode || null,
         resultDescription:
           normalizedStatus === 'expired'
             ? 'Transaction expired after 5 minutes without confirmation.'
-            : result.resultDescription,
+            : result.resultDescription || refreshedTransaction?.resultDescription || null,
       });
     } catch (error) {
       next(new AppError(error.message, 500));
