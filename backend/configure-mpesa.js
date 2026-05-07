@@ -22,49 +22,8 @@ const question = (prompt) => {
 
 async function main() {
   console.log('\n🚀 M-Pesa Configuration Setup\n');
-  console.log('This script will help you configure M-Pesa credentials.\n');
-
-  const mode = await question(
-    'Are you setting up for [s]andbox testing or [p]roduction? (s/p): '
-  );
-
-  if (mode.toLowerCase() === 's') {
-    setupSandbox();
-  } else if (mode.toLowerCase() === 'p') {
-    await setupProduction();
-  } else {
-    console.log('Invalid option. Exiting...');
-    process.exit(1);
-  }
-}
-
-function setupSandbox() {
-  console.log('\n📋 Sandbox Configuration (Testing)\n');
-  console.log('For sandbox testing, use these default Safaricom test credentials:\n');
-
-  const sandboxConfig = {
-    MPESA_CONSUMER_KEY: 'dpF1Z27gVQzjLEw0LHk8PQIAVeqH7V5z',
-    MPESA_CONSUMER_SECRET: 'l6PwbM2qK8RpQxY0',
-    MPESA_SHORTCODE: '174379',
-    MPESA_PASSKEY: 'bfb279f9aa9bdbcf158e97dd71a467cd2e0542f31bff0b23062ad96057225ff7',
-    MPESA_ENVIRONMENT: 'sandbox',
-  };
-
-  console.log('MPESA_CONSUMER_KEY:', sandboxConfig.MPESA_CONSUMER_KEY);
-  console.log('MPESA_CONSUMER_SECRET:', sandboxConfig.MPESA_CONSUMER_SECRET);
-  console.log('MPESA_SHORTCODE:', sandboxConfig.MPESA_SHORTCODE);
-  console.log('MPESA_PASSKEY:', sandboxConfig.MPESA_PASSKEY);
-  console.log('MPESA_ENVIRONMENT:', sandboxConfig.MPESA_ENVIRONMENT);
-
-  console.log(
-    '\n✅ Sandbox credentials are already configured in .env\n'
-  );
-  console.log('Test Phone Numbers (for sandbox):');
-  console.log('  - 254712345678 (or 0712345678 with country code)');
-  console.log('  - 254723456789 (or 0723456789 with country code)\n');
-  console.log('Reference: https://developer.safaricom.co.ke/\n');
-
-  rl.close();
+  console.log('This script configures production M-Pesa credentials only.\n');
+  await setupProduction();
 }
 
 async function setupProduction() {
@@ -80,7 +39,11 @@ async function setupProduction() {
     'Enter your MPESA_CONSUMER_SECRET (from Daraja): '
   );
   const shortcode = await question('Enter your MPESA_SHORTCODE (business shortcode): ');
+  const partyB = await question('Enter your MPESA_PARTYB (Buy Goods/Till or paybill destination): ');
   const passkey = await question('Enter your MPESA_PASSKEY (from M-Pesa Portal): ');
+  const transactionType = await question(
+    'Enter MPESA_TRANSACTION_TYPE (CustomerBuyGoodsOnline or CustomerPayBillOnline): '
+  );
   const callbackUrl = await question(
     'Enter your MPESA_CALLBACK_URL (e.g., https://yourdomain.com/api/mpesa/callback): '
   );
@@ -103,7 +66,9 @@ async function setupProduction() {
   envContent = updateEnvVar(envContent, 'MPESA_CONSUMER_KEY', consumerKey);
   envContent = updateEnvVar(envContent, 'MPESA_CONSUMER_SECRET', consumerSecret);
   envContent = updateEnvVar(envContent, 'MPESA_SHORTCODE', shortcode);
+  envContent = updateEnvVar(envContent, 'MPESA_PARTYB', partyB);
   envContent = updateEnvVar(envContent, 'MPESA_PASSKEY', passkey);
+  envContent = updateEnvVar(envContent, 'MPESA_TRANSACTION_TYPE', transactionType || 'CustomerBuyGoodsOnline');
   envContent = updateEnvVar(envContent, 'MPESA_CALLBACK_URL', callbackUrl);
   envContent = updateEnvVar(envContent, 'FRONTEND_URL', frontendUrl);
   envContent = updateEnvVar(envContent, 'MONGODB_URI', mongoUri);

@@ -182,11 +182,13 @@ JWT_SECRET=your_secret_key
 JWT_EXPIRE=7d
 
 # M-Pesa Daraja API
-MPESA_CONSUMER_KEY=your_consumer_key
-MPESA_CONSUMER_SECRET=your_consumer_secret
-MPESA_SHORTCODE=174379
-MPESA_PASSKEY=your_passkey
-MPESA_ENVIRONMENT=sandbox
+MPESA_CONSUMER_KEY=your_production_consumer_key
+MPESA_CONSUMER_SECRET=your_production_consumer_secret
+MPESA_SHORTCODE=your_business_shortcode
+MPESA_PARTYB=your_buygoods_or_paybill_destination
+MPESA_PASSKEY=your_production_passkey
+MPESA_ENVIRONMENT=production
+MPESA_TRANSACTION_TYPE=CustomerBuyGoodsOnline
 MPESA_CALLBACK_URL=http://your-domain.com/api/mpesa/callback
 
 # Loan Settings
@@ -243,11 +245,11 @@ The backend integrates with M-Pesa Daraja API for payment processing:
 3. **Status Check** - Polls for payment confirmation
 4. **Callback** - Receives M-Pesa callback notifications
 
-### M-Pesa Sandbox Testing
+### M-Pesa Credentials
 
-- Consumer Key/Secret: Available from Safaricom Developer Portal
-- Shortcode: 174379 (test)
-- Test Phone: 254708374149
+- Use production Consumer Key/Secret from Safaricom Daraja.
+- Use the shortcode/passkey tied to your live business setup.
+- Ensure `MPESA_TRANSACTION_TYPE` matches your business type.
 
 ## 🚀 Production Deployment
 

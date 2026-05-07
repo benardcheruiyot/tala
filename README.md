@@ -138,11 +138,13 @@ PORT=5000
 FRONTEND_URL=http://localhost:3000
 
 # M-Pesa Configuration
-MPESA_CONSUMER_KEY=your_key
-MPESA_CONSUMER_SECRET=your_secret
-MPESA_SHORTCODE=174379
-MPESA_PASSKEY=your_passkey
-MPESA_ENVIRONMENT=sandbox
+MPESA_CONSUMER_KEY=your_production_key
+MPESA_CONSUMER_SECRET=your_production_secret
+MPESA_SHORTCODE=your_business_shortcode
+MPESA_PARTYB=your_buygoods_or_paybill_destination
+MPESA_PASSKEY=your_production_passkey
+MPESA_ENVIRONMENT=production
+MPESA_TRANSACTION_TYPE=CustomerBuyGoodsOnline
 
 # Loan Settings
 LOAN_MIN_AMOUNT=1000
