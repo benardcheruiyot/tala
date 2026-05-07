@@ -138,6 +138,14 @@
   box-shadow: none;
 }
 
+.swal2-popup.spinner-only-popup .swal2-html-container {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  max-height: none !important;
+  line-height: 0;
+}
+
 .swal2-popup.spinner-only-popup .swal2-loader,
 .swal2-popup.spinner-only-popup .swal2-title,
 .swal2-popup.spinner-only-popup .swal2-actions,
