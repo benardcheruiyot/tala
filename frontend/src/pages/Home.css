@@ -127,15 +127,15 @@
 /* Card styles are in globals.css */
 
 .swal2-popup.spinner-only-popup {
-  width: 140px;
-  min-height: 140px;
-  padding: 1.2rem;
-  border-radius: 16px;
+  width: auto;
+  min-height: auto;
+  padding: 0;
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff;
-  box-shadow: 0 20px 28px -10px rgba(15, 23, 42, 0.22);
+  background: transparent;
+  box-shadow: none;
 }
 
 .swal2-popup.spinner-only-popup .swal2-loader,
@@ -158,11 +158,6 @@
   border-right-color: var(--primary-dark);
   border-radius: 50%;
   animation: homeSpin 0.7s linear infinite;
-}
-
-.swal2-timer-progress-bar.spinner-progress-bar {
-  background: linear-gradient(90deg, var(--primary), var(--primary-dark));
-  opacity: 0.9;
 }
 
 @keyframes homeSpin {

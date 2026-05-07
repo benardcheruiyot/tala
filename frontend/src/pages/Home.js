@@ -26,10 +26,8 @@ const Home = () => {
         allowOutsideClick: false,
         allowEscapeKey: false,
         timer: 700,
-        timerProgressBar: true,
         customClass: {
           popup: 'spinner-only-popup',
-          timerProgressBar: 'spinner-progress-bar',
         },
       });
 
