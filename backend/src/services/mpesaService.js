@@ -70,6 +70,7 @@ class MpesaService {
               Authorization: `Basic ${auth}`,
             },
             httpsAgent: this.httpsAgent,
+            proxy: false,
             timeout: 20000,
           }
         );
@@ -155,6 +156,8 @@ class MpesaService {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
+          httpsAgent: this.httpsAgent,
+          proxy: false,
         }
       );
 
@@ -217,6 +220,8 @@ class MpesaService {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
+          httpsAgent: this.httpsAgent,
+          proxy: false,
         }
       );
 
