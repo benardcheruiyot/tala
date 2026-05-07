@@ -223,9 +223,37 @@ npm test           # Run tests
 - Ensure M-Pesa callback URL is configured
 
 ### Frontend
-- Can be deployed to Vercel, Netlify, AWS S3 + CloudFront, etc.
+- Can be deployed to InterServer, Netlify, AWS S3 + CloudFront, etc.
 - Build with `npm run build`
 - Update `REACT_APP_API_URL` for production API endpoint
+
+### GitHub Actions (Push To Deploy)
+
+A workflow is included at `.github/workflows/deploy-interserver.yml`.
+On every push, it will:
+
+1. Install backend and frontend dependencies
+2. Build the frontend using `REACT_APP_API_URL` from GitHub Secrets
+3. Upload build artifacts
+4. Deploy backend and frontend to InterServer over SSH
+5. Write `backend/.env` on the server from GitHub Secrets
+6. Install production dependencies on server
+7. Auto-install PM2 if missing and restart backend
+
+Set these repository secrets in GitHub:
+
+- `INTERSERVER_HOST` - Server hostname or IP
+- `INTERSERVER_SSH_PORT` - SSH port (use `22` if standard)
+- `INTERSERVER_USER` - SSH user
+- `INTERSERVER_SSH_KEY` - Private key for SSH auth
+- `INTERSERVER_APP_DIR` - Server path for backend app files (example: `/home/username/apps/tala`)
+- `INTERSERVER_WEB_ROOT` - Server web root for frontend static files (example: `/home/username/public_html`)
+- `REACT_APP_API_URL` - Production API URL used at frontend build time (example: `https://tala.mkopaji.com/api`)
+- `BACKEND_ENV_FILE` - Full contents of production `backend/.env` (multiline secret)
+
+Notes:
+
+- After secrets are set once, deployment is push-only from your side.
 
 ## 🔒 Security Considerations
 

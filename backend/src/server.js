@@ -26,22 +26,11 @@ const allowedOrigins = [
   ...configuredOrigins,
   'http://localhost:3000',
   'http://127.0.0.1:3000',
-  'https://talamkopo.vercel.app',
-  'https://talamkopoextrake.vercel.app',
 ];
 
 const isAllowedOrigin = (origin) => {
   if (!origin) return true;
   if (allowedOrigins.includes(origin)) return true;
-
-  // Optional wildcard for preview deployments when explicitly enabled.
-  if (
-    process.env.ALLOW_VERCEL_PREVIEWS === 'true' &&
-    /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin)
-  ) {
-    return true;
-  }
-
   return false;
 };
 

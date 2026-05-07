@@ -224,10 +224,9 @@ Optimized build created in `build/` directory
 
 ### Deployment Options
 
-1. **Vercel** (Recommended)
-```bash
-vercel
-```
+1. **InterServer**
+- Upload the `build/` directory contents to your InterServer web root (for example `public_html`).
+- Point your domain to the hosting account and ensure your backend API URL is set in `.env`.
 
 2. **Netlify**
 ```bash

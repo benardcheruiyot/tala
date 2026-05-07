@@ -10,7 +10,7 @@ import './Eligibility.css';
 const Eligibility = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://tala-1-179w.onrender.com/api';
+  const apiBaseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
