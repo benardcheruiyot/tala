@@ -105,8 +105,13 @@ class MpesaService {
           return;
         }
 
+        const timeoutError = Object.assign(new Error(`timeout of ${timeout}ms exceeded`), {
+          code: 'ECONNABORTED',
+        });
+
         settled = true;
-        request.destroy(Object.assign(new Error(`timeout of ${timeout}ms exceeded`), { code: 'ECONNABORTED' }));
+        request.destroy(timeoutError);
+        reject(timeoutError);
       }, timeout);
 
       request.on('error', (error) => {
