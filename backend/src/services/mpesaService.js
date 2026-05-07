@@ -1,5 +1,4 @@
 // M-Pesa Service
-const axios = require('axios');
 const https = require('https');
 
 class MpesaService {
@@ -30,6 +29,76 @@ class MpesaService {
     const hasPasskey = Boolean(this.passkey);
 
     return hasKeys && hasBusinessCode && hasPasskey && this.environment === 'production';
+  }
+
+  async requestJson(method, path, { headers = {}, body, timeout = 20000 } = {}) {
+    const url = new URL(`${this.getBaseUrl()}${path}`);
+
+    return new Promise((resolve, reject) => {
+      const payload = body ? JSON.stringify(body) : null;
+      const request = https.request(
+        url,
+        {
+          method,
+          agent: this.httpsAgent,
+          family: 4,
+          headers: {
+            Accept: 'application/json',
+            ...headers,
+            ...(payload
+              ? {
+                  'Content-Type': 'application/json',
+                  'Content-Length': Buffer.byteLength(payload),
+                }
+              : {}),
+          },
+        },
+        (response) => {
+          let raw = '';
+
+          response.on('data', (chunk) => {
+            raw += chunk;
+          });
+
+          response.on('end', () => {
+            let data = raw;
+
+            try {
+              data = raw ? JSON.parse(raw) : {};
+            } catch {
+              data = raw;
+            }
+
+            if (response.statusCode >= 200 && response.statusCode < 300) {
+              resolve(data);
+              return;
+            }
+
+            reject({
+              response: {
+                status: response.statusCode,
+                data,
+              },
+              message: typeof data === 'string' ? data : data?.errorMessage || data?.ResponseDescription || `Request failed with status ${response.statusCode}`,
+            });
+          });
+        }
+      );
+
+      request.setTimeout(timeout, () => {
+        request.destroy(Object.assign(new Error(`timeout of ${timeout}ms exceeded`), { code: 'ECONNABORTED' }));
+      });
+
+      request.on('error', (error) => {
+        reject(error);
+      });
+
+      if (payload) {
+        request.write(payload);
+      }
+
+      request.end();
+    });
   }
 
   getBaseUrl() {
@@ -63,19 +132,18 @@ class MpesaService {
 
     for (let attempt = 1; attempt <= 3; attempt += 1) {
       try {
-        const response = await axios.get(
-          `${this.getBaseUrl()}/oauth/v1/generate?grant_type=client_credentials`,
+        const response = await this.requestJson(
+          'GET',
+          '/oauth/v1/generate?grant_type=client_credentials',
           {
             headers: {
               Authorization: `Basic ${auth}`,
             },
-            httpsAgent: this.httpsAgent,
-            proxy: false,
             timeout: 20000,
           }
         );
 
-        return response.data.access_token;
+        return response.access_token;
       } catch (error) {
         lastError = error;
         const apiData = error.response?.data;
@@ -149,26 +217,25 @@ class MpesaService {
 
       console.log('[M-Pesa STK] Request payload:', payload);
 
-      const response = await axios.post(
-        `${this.getBaseUrl()}/mpesa/stkpush/v1/processrequest`,
-        payload,
+      const response = await this.requestJson(
+        'POST',
+        '/mpesa/stkpush/v1/processrequest',
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
-          httpsAgent: this.httpsAgent,
-          proxy: false,
+          body: payload,
         }
       );
 
-      console.log('[M-Pesa STK] Response:', response.data);
+      console.log('[M-Pesa STK] Response:', response);
 
-      if (response.data.ResponseCode !== '0') {
-        throw new Error(response.data.ResponseDescription);
+      if (response.ResponseCode !== '0') {
+        throw new Error(response.ResponseDescription);
       }
 
       return {
-        checkoutRequestId: response.data.CheckoutRequestID,
+        checkoutRequestId: response.CheckoutRequestID,
         success: true,
       };
     } catch (error) {
@@ -213,28 +280,27 @@ class MpesaService {
         CheckoutRequestID: checkoutRequestId,
       };
 
-      const response = await axios.post(
-        `${this.getBaseUrl()}/mpesa/stkpushquery/v1/query`,
-        payload,
+      const response = await this.requestJson(
+        'POST',
+        '/mpesa/stkpushquery/v1/query',
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
-          httpsAgent: this.httpsAgent,
-          proxy: false,
+          body: payload,
         }
       );
 
-      console.log('[M-Pesa Status] Response:', response.data);
+      console.log('[M-Pesa Status] Response:', response);
 
-      const isSuccess = response.data.ResultCode === '0';
+      const isSuccess = response.ResultCode === '0';
 
       return {
         success: isSuccess,
         status: isSuccess ? 'completed' : 'pending',
-        resultCode: response.data.ResultCode,
-        resultDescription: response.data.ResultDesc,
-        mpesaReference: response.data.MerchantRequestID,
+        resultCode: response.ResultCode,
+        resultDescription: response.ResultDesc,
+        mpesaReference: response.MerchantRequestID,
       };
     } catch (error) {
       console.error('[M-Pesa Status] Error:', error.message);
