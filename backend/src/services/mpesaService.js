@@ -36,10 +36,6 @@ class MpesaService {
   }
 
   resolvePartyB() {
-    if (this.transactionType === 'CustomerBuyGoodsOnline') {
-      return this.shortcode || this.partyB;
-    }
-
     return this.partyB || this.shortcode;
   }
 
