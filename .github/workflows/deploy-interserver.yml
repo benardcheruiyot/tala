@@ -61,13 +61,13 @@ jobs:
               $SUDO yum install -y nginx
             fi
 
-            cat <<EOF | $SUDO tee /etc/nginx/conf.d/tala.mkopaji.com.conf > /dev/null
+            cat <<'EOF' | $SUDO tee /etc/nginx/conf.d/tala.mkopaji.com.conf > /dev/null
             server {
               listen 80;
               listen [::]:80;
               server_name tala.mkopaji.com mkopaji.com www.mkopaji.com;
 
-              root $WEB_ROOT;
+              root /var/www/tala.mkopaji.com/frontend/build;
               index index.html;
 
               location /api/ {
