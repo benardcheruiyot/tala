@@ -229,34 +229,24 @@ npm test           # Run tests
 
 ### GitHub Actions (Push To Deploy)
 
-A workflow is included at `.github/workflows/deploy-interserver.yml`.
-On every push, it will:
+A simplified workflow is included at `.github/workflows/deploy-interserver.yml`.
+It follows the same easy pattern as your previous app deployment:
 
-1. Install backend and frontend dependencies
-2. Build the frontend using the committed `frontend/.env`
-3. Upload build artifacts
-4. Deploy backend and frontend to InterServer over SSH
-5. Deploy the committed `backend/.env` to the server
-6. Install production dependencies on server
-7. Auto-install PM2 if missing and restart backend
-8. Auto-install and configure Nginx for `tala.mkopaji.com`
-9. Auto-provision or renew Let's Encrypt SSL when DNS and `CERTBOT_EMAIL` are available
+1. Copy `frontend/` and `backend/` to your VPS via SCP
+2. Install backend production dependencies
+3. Restart backend with PM2
+4. Configure/restart Nginx
 
 Set these repository secrets in GitHub:
 
-- `INTERSERVER_HOST` - Server hostname or IP
-- `INTERSERVER_SSH_PORT` - SSH port (use `22` if standard)
-- `INTERSERVER_USER` - SSH user
-- `INTERSERVER_SSH_KEY` - Private key for SSH auth
-- `INTERSERVER_APP_DIR` - Server path for backend app files (example: `/home/username/apps/tala`)
-- `INTERSERVER_WEB_ROOT` - Server web root for frontend static files (example: `/home/username/public_html`)
-- `CERTBOT_EMAIL` - Optional email address for Let's Encrypt certificate registration
+- `VPS_HOST` - Server IP or hostname
+- `VPS_USER` - SSH user
+- `VPS_SSH_KEY` - Private SSH key
 
-Notes:
-
-- After secrets are set once, deployment is push-only from your side.
-- The workflow now uses the tracked `.env` files in this repository for backend and frontend configuration.
-- The Nginx automation assumes your SSH user has `sudo` access when not logging in as root.
+The workflow deploys to `/var/www/tala.mkopaji.com` and configures Nginx for:
+- `tala.mkopaji.com`
+- `mkopaji.com`
+- `www.mkopaji.com`
 
 ## 🔒 Security Considerations
 

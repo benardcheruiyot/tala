@@ -1,213 +1,92 @@
-name: Deploy To InterServer
+name: Deploy to InterServer
 
 on:
   push:
-
-concurrency:
-  group: deploy-interserver-${{ github.ref }}
-  cancel-in-progress: true
+    branches:
+      - master
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Sync files to VPS
+        uses: appleboy/scp-action@v0.1.7
         with:
-          node-version: 20
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "frontend/,backend/"
+          target: "/var/www/tala.mkopaji.com"
+          strip_components: 0
 
-      - name: Install backend dependencies
-        working-directory: backend
-        run: npm install
-
-      - name: Install frontend dependencies
-        working-directory: frontend
-        run: npm install
-
-      - name: Build frontend
-        working-directory: frontend
-        run: npm run build
-
-      - name: Upload backend artifact
-        uses: actions/upload-artifact@v4
+      - name: Restart backend and configure Nginx
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          name: backend-source
-          path: |
-            backend/**
-            !backend/node_modules/**
-
-      - name: Upload frontend build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-build
-          path: frontend/build/**
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Download backend artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-source
-          path: dist
-
-      - name: Download frontend artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-build
-          path: dist/frontend/build
-
-      - name: Configure SSH
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.INTERSERVER_SSH_KEY }}
-          SSH_HOST: ${{ secrets.INTERSERVER_HOST }}
-          SSH_PORT: ${{ secrets.INTERSERVER_SSH_PORT }}
-        run: |
-          if [ -z "$SSH_PRIVATE_KEY" ] || [ -z "$SSH_HOST" ]; then
-            echo "Missing SSH secrets. Set INTERSERVER_SSH_KEY and INTERSERVER_HOST."
-            exit 1
-          fi
-
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          printf "%s" "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -p "${SSH_PORT:-22}" "$SSH_HOST" >> ~/.ssh/known_hosts
-
-      - name: Deploy files to InterServer
-        env:
-          SSH_HOST: ${{ secrets.INTERSERVER_HOST }}
-          SSH_USER: ${{ secrets.INTERSERVER_USER }}
-          SSH_PORT: ${{ secrets.INTERSERVER_SSH_PORT }}
-          APP_DIR: ${{ secrets.INTERSERVER_APP_DIR }}
-          WEB_ROOT: ${{ secrets.INTERSERVER_WEB_ROOT }}
-        run: |
-          if [ -z "$SSH_USER" ] || [ -z "$APP_DIR" ] || [ -z "$WEB_ROOT" ]; then
-            echo "Missing deploy secrets. Set INTERSERVER_USER, INTERSERVER_APP_DIR, and INTERSERVER_WEB_ROOT."
-            exit 1
-          fi
-
-          ssh -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" "
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
             set -e
-            mkdir -p '$APP_DIR/backend' '$WEB_ROOT'
-          "
 
-          rsync -az --delete -e "ssh -p ${SSH_PORT:-22}" \
-            dist/backend/ "$SSH_USER@$SSH_HOST:$APP_DIR/backend/"
+            APP_ROOT="/var/www/tala.mkopaji.com"
+            BACKEND_DIR="$APP_ROOT/backend"
+            WEB_ROOT="$APP_ROOT/frontend/build"
 
-          rsync -az --delete -e "ssh -p ${SSH_PORT:-22}" \
-            dist/frontend/build/ "$SSH_USER@$SSH_HOST:$WEB_ROOT/"
-
-      - name: Install production dependencies and restart backend
-        env:
-          SSH_HOST: ${{ secrets.INTERSERVER_HOST }}
-          SSH_USER: ${{ secrets.INTERSERVER_USER }}
-          SSH_PORT: ${{ secrets.INTERSERVER_SSH_PORT }}
-          APP_DIR: ${{ secrets.INTERSERVER_APP_DIR }}
-        run: |
-          ssh -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" "
-            set -e
-            cd '$APP_DIR/backend'
+            cd "$BACKEND_DIR"
             npm install --omit=dev
 
-            if ! command -v pm2 >/dev/null 2>&1; then
-              npm install -g pm2
-            fi
-
-            if pm2 describe tala-backend >/dev/null 2>&1; then
-              pm2 restart tala-backend --update-env
+            if pm2 list | grep -q "tala-backend"; then
+              pm2 reload tala-backend --update-env
             else
-              pm2 start npm --name tala-backend -- start
+              pm2 start src/server.js --name tala-backend
+              pm2 save
             fi
 
-            pm2 save
-          "
-
-      - name: Provision Nginx and SSL
-        env:
-          SSH_HOST: ${{ secrets.INTERSERVER_HOST }}
-          SSH_USER: ${{ secrets.INTERSERVER_USER }}
-          SSH_PORT: ${{ secrets.INTERSERVER_SSH_PORT }}
-          WEB_ROOT: ${{ secrets.INTERSERVER_WEB_ROOT }}
-          CERTBOT_EMAIL: ${{ secrets.CERTBOT_EMAIL }}
-        run: |
-          if [ -z "$WEB_ROOT" ]; then
-            echo "Missing deploy secrets. Set INTERSERVER_WEB_ROOT."
-            exit 1
-          fi
-
-          ssh -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" "
-            set -e
-
-            if [ \"\$(id -u)\" -eq 0 ]; then
+            if [ "$(id -u)" -eq 0 ]; then
               SUDO=''
             else
               SUDO='sudo'
             fi
 
             if command -v apt-get >/dev/null 2>&1; then
-              \$SUDO apt-get update
-              \$SUDO apt-get install -y nginx certbot python3-certbot-nginx
+              $SUDO apt-get update
+              $SUDO apt-get install -y nginx
             elif command -v dnf >/dev/null 2>&1; then
-              \$SUDO dnf install -y nginx certbot python3-certbot-nginx
+              $SUDO dnf install -y nginx
             elif command -v yum >/dev/null 2>&1; then
-              \$SUDO yum install -y epel-release || true
-              \$SUDO yum install -y nginx certbot python3-certbot-nginx
-            else
-              echo 'Unsupported package manager. Install nginx and certbot manually.'
-              exit 1
+              $SUDO yum install -y nginx
             fi
 
-            \$SUDO mkdir -p /etc/nginx/conf.d
-
-            cat <<'EOF' | \$SUDO tee /etc/nginx/conf.d/tala.mkopaji.com.conf > /dev/null
+            cat <<EOF | $SUDO tee /etc/nginx/conf.d/tala.mkopaji.com.conf > /dev/null
             server {
               listen 80;
               listen [::]:80;
-              server_name tala.mkopaji.com;
+              server_name tala.mkopaji.com mkopaji.com www.mkopaji.com;
 
-              root ${WEB_ROOT};
+              root $WEB_ROOT;
               index index.html;
 
               location /api/ {
                 proxy_pass http://127.0.0.1:5000;
                 proxy_http_version 1.1;
-                proxy_set_header Host \$host;
-                proxy_set_header X-Real-IP \$remote_addr;
-                proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto \$scheme;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
               }
 
               location / {
-                try_files \$uri \$uri/ /index.html;
+                try_files $uri $uri/ /index.html;
               }
             }
             EOF
 
-            \$SUDO nginx -t
-            \$SUDO systemctl enable nginx
-            \$SUDO systemctl restart nginx
+            $SUDO nginx -t
+            $SUDO systemctl enable nginx
+            $SUDO systemctl restart nginx
 
-            if [ -n '${CERTBOT_EMAIL}' ]; then
-              if getent ahosts tala.mkopaji.com >/dev/null 2>&1; then
-                if [ ! -d /etc/letsencrypt/live/tala.mkopaji.com ]; then
-                  \$SUDO certbot --nginx --non-interactive --agree-tos --redirect -m '${CERTBOT_EMAIL}' -d tala.mkopaji.com
-                else
-                  \$SUDO certbot renew --quiet || true
-                fi
-              else
-                echo 'Skipping certbot because tala.mkopaji.com does not resolve on the server yet.'
-              fi
-            else
-              echo 'Skipping certbot because CERTBOT_EMAIL is not set.'
-            fi
-
-            \$SUDO nginx -t
-            \$SUDO systemctl reload nginx
-          "
+            echo "Deployment complete."
