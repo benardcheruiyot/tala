@@ -1,5 +1,5 @@
 // Dashboard.js - User Dashboard
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -14,15 +14,7 @@ const Dashboard = () => {
   const [loans, setLoans] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchLoans();
-  }, []);
-
-  useEffect(() => {
-    document.title = 'Dashboard | Tala Mkopo Extra';
-  }, []);
-
-  const fetchLoans = async () => {
+  const fetchLoans = useCallback(async () => {
     try {
       const data = await loanService.getUserLoans();
       setLoans(data);
@@ -31,7 +23,15 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchLoans();
+  }, [fetchLoans]);
+
+  useEffect(() => {
+    document.title = 'Dashboard | Tala Mkopo Extra';
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -53,7 +53,7 @@ const Dashboard = () => {
               <h2>Welcome, {user?.name || 'Customer'}!</h2>
               <p className="welcome-subtitle">Your Tala Mkopo Extra Dashboard</p>
             </div>
-            <button className="btn-logout" onClick={handleLogout}>
+            <button type="button" className="btn-logout" onClick={handleLogout}>
               Logout
             </button>
           </div>
@@ -85,7 +85,7 @@ const Dashboard = () => {
         <div className="loans-section">
           <div className="loans-header">
             <h3>Recent Loans</h3>
-            <button className="btn-new-loan" onClick={handleNewLoan}>
+            <button type="button" className="btn-new-loan" onClick={handleNewLoan}>
               + Apply New Loan
             </button>
           </div>
@@ -97,7 +97,7 @@ const Dashboard = () => {
               <div className="empty-state-icon">✓</div>
               <h4>Your account is ready</h4>
               <p>You don't have any loans yet.</p>
-              <button className="btn-primary" onClick={handleNewLoan}>
+              <button type="button" className="btn-primary" onClick={handleNewLoan}>
                 Apply for Your First Loan
               </button>
             </div>

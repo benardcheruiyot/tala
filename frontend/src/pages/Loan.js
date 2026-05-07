@@ -12,6 +12,8 @@ import './Loan.css';
 const Loan = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const paymentPollRef = useRef(null);
+  const isMountedRef = useRef(true);
   const [selectedLoan, setSelectedLoan] = useState(null);
   const [loading, setLoading] = useState(false);
   const [recentIndex, setRecentIndex] = useState(0);
@@ -149,6 +151,15 @@ const Loan = () => {
     return () => clearInterval(interval);
   }, [recentLoans.length]);
 
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (paymentPollRef.current) {
+        clearInterval(paymentPollRef.current);
+      }
+    };
+  }, []);
+
   const handleSelectLoan = (loan) => {
     setSelectedLoan(loan);
     setTimeout(() => {
@@ -185,7 +196,7 @@ const Loan = () => {
       });
 
       if (!confirmed) {
-        setLoading(false);
+        if (isMountedRef.current) setLoading(false);
         return;
       }
 
@@ -219,7 +230,7 @@ const Loan = () => {
       // Poll for payment status
       let attempts = 0;
       const maxAttempts = 20;
-      const pollInterval = setInterval(async () => {
+      paymentPollRef.current = setInterval(async () => {
         attempts++;
 
         try {
@@ -228,7 +239,7 @@ const Loan = () => {
           );
 
           if (statusResult.success) {
-            clearInterval(pollInterval);
+            clearInterval(paymentPollRef.current);
 
             Swal.fire({
               icon: 'success',
@@ -240,31 +251,31 @@ const Loan = () => {
               navigate('/dashboard');
             });
           } else if (statusResult.status === 'failed' || statusResult.status === 'cancelled') {
-            clearInterval(pollInterval);
+            clearInterval(paymentPollRef.current);
             Swal.fire(
               'Payment Not Completed',
               statusResult.resultDescription || 'M-Pesa payment was not completed. Please try again.',
               'warning'
             );
-            setLoading(false);
+            if (isMountedRef.current) setLoading(false);
           } else if (attempts >= maxAttempts) {
-            clearInterval(pollInterval);
+            clearInterval(paymentPollRef.current);
             Swal.fire(
               'Timeout',
               'Payment confirmation timeout. Please check your account.',
               'info'
             );
-            setLoading(false);
+            if (isMountedRef.current) setLoading(false);
           }
         } catch (error) {
-          clearInterval(pollInterval);
+          clearInterval(paymentPollRef.current);
           Swal.fire('Error', 'Failed to check payment status', 'error');
-          setLoading(false);
+          if (isMountedRef.current) setLoading(false);
         }
       }, 3000);
     } catch (error) {
       Swal.fire('Error', error.message || 'Failed to apply for loan', 'error');
-      setLoading(false);
+      if (isMountedRef.current) setLoading(false);
     }
   };
 
@@ -293,7 +304,7 @@ const Loan = () => {
 
           <div className="recent-loans-box">
             <h3>📢 Recent Loans</h3>
-            <p key={recentIndex} className="recent-loan-ticker">
+            <p key={recentIndex} className="recent-loan-ticker" aria-live="polite">
               {recentLoans[recentIndex].phone} received Ksh{recentLoans[recentIndex].amount} - {recentLoans[recentIndex].time}
             </p>
           </div>

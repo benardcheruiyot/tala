@@ -61,7 +61,7 @@ const Processing = () => {
       clearInterval(progressIntervalRef.current);
       clearInterval(messageIntervalRef.current);
     };
-  }, [navigate, showResult]);
+  }, [navigate]);
 
   return (
     <div className="processing-page">
@@ -78,10 +78,14 @@ const Processing = () => {
           <div className="processing-dot"></div>
         </div>
 
-        {showMessage && <div className="processing-message">{messages[messageIndex]}</div>}
+        {showMessage && (
+          <div className="processing-message" aria-live="polite">
+            {messages[messageIndex]}
+          </div>
+        )}
 
         <div className="processing-progress-container">
-          <div className="processing-progress-text">
+          <div className="processing-progress-text" aria-live="polite">
             <span>Progress</span>
             <span>{progress}%</span>
           </div>

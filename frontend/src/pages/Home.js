@@ -78,7 +78,13 @@ const Home = () => {
           </div>
         </div>
 
-        <button className="btn-primary" onClick={handleApplyNow} disabled={isNavigating}>
+        <button
+          type="button"
+          className="btn-primary"
+          onClick={handleApplyNow}
+          disabled={isNavigating}
+          aria-busy={isNavigating}
+        >
           <span>Apply Now</span>
           <svg
             xmlns="http://www.w3.org/2000/svg"
