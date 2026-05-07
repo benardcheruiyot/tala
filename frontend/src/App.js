@@ -30,6 +30,15 @@ function App() {
           />
 
           <Route
+            path="/loanapproval"
+            element={
+              <ProtectedRoute>
+                <Processing />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/loan"
             element={
               <ProtectedRoute>

@@ -1,109 +1,111 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
 import './Processing.css';
 
 const messages = [
   'Initializing secure connection...',
   'Verifying your details...',
-  'Checking eligibility status...',
-  'Preparing your loan options...',
-  'Finalizing application review...',
-  'Completing final calculations...',
+  'Checking credit profile...',
+  'Contacting verification services...',
+  'Calculating loan offer...',
+  'Finalizing approval...',
 ];
 
 const Processing = () => {
   const navigate = useNavigate();
+  const progressIntervalRef = useRef(null);
+  const messageIntervalRef = useRef(null);
+  const initialDelayRef = useRef(null);
+  const successDelayRef = useRef(null);
   const [progress, setProgress] = useState(0);
+  const [messageIndex, setMessageIndex] = useState(0);
+  const [showProgress, setShowProgress] = useState(false);
+  const [showMessage, setShowMessage] = useState(true);
   const [showResult, setShowResult] = useState(false);
 
   useEffect(() => {
-    document.title = 'Processing | Tala Mkopo Extra';
+    document.title = 'Processing Eligibility | Tala Mkopo Extra';
   }, []);
 
-  const step = useMemo(() => {
-    const maxIndex = messages.length - 1;
-    const nextStep = Math.floor((progress / 100) * maxIndex);
-    return Math.min(nextStep, maxIndex);
-  }, [progress]);
-
   useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          return 100;
-        }
-        return prev + 1;
-      });
-    }, 115);
+    initialDelayRef.current = setTimeout(() => {
+      setShowProgress(true);
+
+      messageIntervalRef.current = setInterval(() => {
+        setMessageIndex((prev) => (prev + 1) % messages.length);
+      }, 2800);
+
+      progressIntervalRef.current = setInterval(() => {
+        setProgress((prev) => {
+          const next = prev + 1;
+          if (next >= 100) {
+            clearInterval(progressIntervalRef.current);
+            clearInterval(messageIntervalRef.current);
+            setShowProgress(false);
+            setShowMessage(false);
+            setShowResult(true);
+            successDelayRef.current = setTimeout(() => {
+              localStorage.setItem('loanapproval_shown', '1');
+              navigate('/apply');
+            }, 2000);
+            return 100;
+          }
+          return next;
+        });
+      }, 170);
+    }, 2000);
 
     return () => {
-      clearInterval(interval);
+      clearTimeout(initialDelayRef.current);
+      clearTimeout(successDelayRef.current);
+      clearInterval(progressIntervalRef.current);
+      clearInterval(messageIntervalRef.current);
     };
-  }, []);
-
-  useEffect(() => {
-    if (progress === 100 && !showResult) {
-      setShowResult(true);
-    }
-  }, [progress, showResult]);
-
-  useEffect(() => {
-    if (!showResult) {
-      return;
-    }
-
-    const done = setTimeout(() => {
-      navigate('/loan');
-    }, 5200);
-
-    return () => clearTimeout(done);
   }, [navigate, showResult]);
 
   return (
-    <div className="container processing-page">
-      <Header logoInitial="P" />
+    <div className="processing-page">
+      <div className="processing-container">
+        <div className="processing-trust-seal">🔒 Secure Processing</div>
 
-      <div className="processing-card card">
-        <div className="processing-badge">🔐 Secure Processing</div>
+        <h1>Processing Your Application</h1>
 
-        <h2>Processing Your Application</h2>
-
-        <div className="ssl-chip">✓ 256-bit SSL Encryption</div>
+        <div className="processing-security-badge">✓ 256-bit SSL Encryption</div>
 
         <div className="processing-dots" aria-hidden="true">
-          <span></span>
-          <span></span>
-          <span></span>
+          <div className="processing-dot"></div>
+          <div className="processing-dot"></div>
+          <div className="processing-dot"></div>
         </div>
 
-        {!showResult && <p className="processing-message">{messages[step]}</p>}
+        {showMessage && <div className="processing-message">{messages[messageIndex]}</div>}
 
-        <div className="progress-head">
-          <span>Progress</span>
-          <span>{progress}%</span>
-        </div>
-        <div className="progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}>
-          <div className="progress-fill" style={{ width: `${progress}%` }}></div>
+        <div className="processing-progress-container">
+          <div className="processing-progress-text">
+            <span>Progress</span>
+            <span>{progress}%</span>
+          </div>
+          {showProgress && (
+            <div className="processing-progress-bar">
+              <div className="processing-progress" style={{ width: `${progress}%` }}></div>
+            </div>
+          )}
         </div>
 
-        <div className="processing-grid">
-          <div>🏦 CBK Licensed</div>
-          <div>⏱️ Instant Approval</div>
-          <div>🔐 Data Protected</div>
-          <div>💳 No Hidden Fees</div>
+        <div className="processing-trust-grid">
+          <div className="processing-trust-item">🏦 CBK Licensed</div>
+          <div className="processing-trust-item">⏱️ Instant Approval</div>
+          <div className="processing-trust-item">🔐 Data Protected</div>
+          <div className="processing-trust-item">💳 No Hidden Fees</div>
         </div>
 
         {showResult && (
-          <div className="processing-result">
-            <div className="processing-result-check">✓</div>
+          <div className="processing-success">
+            <div className="processing-success-check">✔</div>
             <p>Eligibility successful. You qualify for a loan.</p>
           </div>
         )}
       </div>
-
-      <Footer />
     </div>
   );
 };
