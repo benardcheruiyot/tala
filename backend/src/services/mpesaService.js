@@ -12,6 +12,8 @@ class MpesaService {
     this.passkey = String(process.env.MPESA_PASSKEY || '').trim();
     this.transactionType = String(process.env.MPESA_TRANSACTION_TYPE || 'CustomerPayBillOnline').trim();
     this.httpsAgent = new https.Agent({ family: 4, keepAlive: false });
+    this.cachedAccessToken = null;
+    this.cachedAccessTokenExpiresAt = 0;
     
     // Log M-Pesa configuration status
     this.isConfigured = this.isProperlyConfigured();
@@ -36,6 +38,7 @@ class MpesaService {
 
     return new Promise((resolve, reject) => {
       const payload = body ? JSON.stringify(body) : null;
+      let settled = false;
       const request = https.request(
         url,
         {
@@ -61,6 +64,12 @@ class MpesaService {
           });
 
           response.on('end', () => {
+            if (settled) {
+              return;
+            }
+
+            settled = true;
+            clearTimeout(absoluteTimeout);
             let data = raw;
 
             try {
@@ -85,11 +94,22 @@ class MpesaService {
         }
       );
 
-      request.setTimeout(timeout, () => {
+      const absoluteTimeout = setTimeout(() => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
         request.destroy(Object.assign(new Error(`timeout of ${timeout}ms exceeded`), { code: 'ECONNABORTED' }));
-      });
+      }, timeout);
 
       request.on('error', (error) => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        clearTimeout(absoluteTimeout);
         reject(error);
       });
 
@@ -124,6 +144,10 @@ class MpesaService {
   }
 
   async getAccessToken() {
+    if (this.cachedAccessToken && Date.now() < this.cachedAccessTokenExpiresAt) {
+      return this.cachedAccessToken;
+    }
+
     const auth = Buffer.from(
       `${this.consumerKey}:${this.consumerSecret}`
     ).toString('base64');
@@ -139,9 +163,13 @@ class MpesaService {
             headers: {
               Authorization: `Basic ${auth}`,
             },
-            timeout: 20000,
+            timeout: 8000,
           }
         );
+
+        const expiresInMs = Math.max((parseInt(response.expires_in, 10) || 0) - 60, 60) * 1000;
+        this.cachedAccessToken = response.access_token;
+        this.cachedAccessTokenExpiresAt = Date.now() + expiresInMs;
 
         return response.access_token;
       } catch (error) {
@@ -225,6 +253,7 @@ class MpesaService {
             Authorization: `Bearer ${accessToken}`,
           },
           body: payload,
+          timeout: 15000,
         }
       );
 
@@ -248,7 +277,12 @@ class MpesaService {
       // DO NOT HIDE ERRORS - Show them so the user knows what's wrong
       return {
         success: false,
-        message: apiError?.errorMessage || apiError?.ResponseDescription || error.message,
+        message:
+          apiError?.errorMessage ||
+          apiError?.ResponseDescription ||
+          (error.code === 'ECONNABORTED'
+            ? 'Safaricom STK request timed out before completion. Please try again.'
+            : error.message),
         errorCode: apiError?.errorCode,
         fullError: apiError,
       };
