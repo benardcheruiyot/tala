@@ -1,12 +1,36 @@
 // Home.js - Landing Page
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import './Home.css';
 
 const Home = () => {
   const navigate = useNavigate();
+  const [isNavigating, setIsNavigating] = useState(false);
+
+  const handleApplyNow = () => {
+    if (isNavigating) return;
+
+    setIsNavigating(true);
+
+    Swal.fire({
+      title: 'Please Wait',
+      text: 'Preparing your application...',
+      showConfirmButton: false,
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+
+    setTimeout(() => {
+      Swal.close();
+      navigate('/eligibility');
+      setIsNavigating(false);
+    }, 450);
+  };
 
   return (
     <div className="container">
@@ -49,7 +73,7 @@ const Home = () => {
           </div>
         </div>
 
-        <button className="btn-primary" onClick={() => navigate('/eligibility')}>
+        <button className="btn-primary" onClick={handleApplyNow} disabled={isNavigating}>
           <span>Apply Now</span>
           <svg
             xmlns="http://www.w3.org/2000/svg"
