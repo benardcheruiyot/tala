@@ -138,6 +138,18 @@
   box-shadow: 0 20px 28px -10px rgba(15, 23, 42, 0.22);
 }
 
+.swal2-popup.spinner-only-popup .swal2-loader,
+.swal2-popup.spinner-only-popup .swal2-title,
+.swal2-popup.spinner-only-popup .swal2-actions,
+.swal2-popup.spinner-only-popup .swal2-close {
+  margin: 0;
+  display: none !important;
+}
+
+.swal2-popup.spinner-only-popup .home-popup-spinner {
+  display: block !important;
+}
+
 .home-popup-spinner {
   width: 48px;
   height: 48px;

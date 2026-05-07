@@ -31,9 +31,6 @@ const Home = () => {
           popup: 'spinner-only-popup',
           timerProgressBar: 'spinner-progress-bar',
         },
-        didOpen: () => {
-          Swal.showLoading();
-        },
       });
 
       navigate('/eligibility');
