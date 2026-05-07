@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Header from '../components/Header';
 import Footer from '../components/Footer';
 import './Processing.css';
 
@@ -16,6 +17,10 @@ const Processing = () => {
   const navigate = useNavigate();
   const [progress, setProgress] = useState(0);
   const [showResult, setShowResult] = useState(false);
+
+  useEffect(() => {
+    document.title = 'Processing | Tala Mkopo Extra';
+  }, []);
 
   const step = useMemo(() => {
     const maxIndex = messages.length - 1;
@@ -58,6 +63,8 @@ const Processing = () => {
 
   return (
     <div className="container processing-page">
+      <Header logoInitial="P" />
+
       <div className="processing-card card">
         <div className="processing-badge">🔐 Secure Processing</div>
 

@@ -5,6 +5,8 @@ import { loanService } from '../services/api';
 import { formatCurrency } from '../utils/helpers';
 import { useAuth } from '../hooks/useAuth';
 import Swal from 'sweetalert2';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 import './Loan.css';
 
 const Loan = () => {
@@ -137,6 +139,10 @@ const Loan = () => {
   }, [user, navigate]);
 
   useEffect(() => {
+    document.title = 'Loan Options | Tala Mkopo Extra';
+  }, []);
+
+  useEffect(() => {
     const interval = setInterval(() => {
       setRecentIndex(prev => (prev + 1) % recentLoans.length);
     }, 3000);
@@ -263,15 +269,12 @@ const Loan = () => {
   };
 
   return (
-    <div className="apply-page-wrap">
-      <div className="apply-topbar">Fast and secure loan processing • 100% online application</div>
+    <div className="container apply-page-wrap">
+      <Header logoInitial="P" />
 
-      <div className="container apply-container">
+      <div className="apply-container">
         <div className="loan-content card">
-          <div className="apply-brand-row">
-            <div className="apply-logo-box">P</div>
-            <h1>Tala Mkopo Extra</h1>
-          </div>
+          <h1>Loan Options</h1>
 
           <p className="apply-subtitle">
             Get the financial support you need with our simple, transparent loan process
@@ -348,6 +351,8 @@ const Loan = () => {
           </Link>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 };

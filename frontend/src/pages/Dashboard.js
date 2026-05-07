@@ -18,6 +18,10 @@ const Dashboard = () => {
     fetchLoans();
   }, []);
 
+  useEffect(() => {
+    document.title = 'Dashboard | Tala Mkopo Extra';
+  }, []);
+
   const fetchLoans = async () => {
     try {
       const data = await loanService.getUserLoans();

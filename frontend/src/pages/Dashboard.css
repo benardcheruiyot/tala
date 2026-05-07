@@ -2,7 +2,7 @@
 .dashboard-content {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
   flex: 1;
 }
 
@@ -37,12 +37,12 @@
 
 .welcome-header h2 {
   margin-bottom: 0.5rem;
-  font-size: 1.2rem;
+  font-size: 1.12rem;
 }
 
 .welcome-subtitle {
   opacity: 0.9;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
 }
 
 .dashboard-grid {
@@ -57,12 +57,12 @@
 
 .info-card h3 {
   color: var(--primary);
-  margin-bottom: 1rem;
-  font-size: 1rem;
+  margin-bottom: 0.7rem;
+  font-size: 0.95rem;
 }
 
 .info-card p {
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   margin-bottom: 0.5rem;
   display: flex;
   justify-content: space-between;
@@ -82,7 +82,7 @@
 
 .loans-header h3 {
   color: var(--text);
-  font-size: 1.15rem;
+  font-size: 1.02rem;
 }
 
 .btn-new-loan {
@@ -104,7 +104,7 @@
 
 .empty-state {
   text-align: center;
-  padding: 2rem 1.5rem;
+  padding: 1.35rem 1.2rem;
   background: rgba(38, 194, 163, 0.05);
   border-left: 4px solid var(--primary);
 }
@@ -157,7 +157,7 @@
 .loan-card-header h4 {
   color: var(--primary);
   margin-bottom: 0.25rem;
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 .loan-status {
@@ -176,7 +176,7 @@
 }
 
 .loan-amount {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--primary);
 }
@@ -191,7 +191,7 @@
 .detail {
   display: flex;
   justify-content: space-between;
-  font-size: 0.9rem;
+  font-size: 0.84rem;
   padding: 0.5rem 0;
 }
 
