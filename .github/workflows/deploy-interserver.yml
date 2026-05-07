@@ -34,10 +34,15 @@ jobs:
 
             APP_ROOT="/var/www/tala.mkopaji.com"
             BACKEND_DIR="$APP_ROOT/backend"
+            FRONTEND_DIR="$APP_ROOT/frontend"
             WEB_ROOT="$APP_ROOT/frontend/build"
 
             cd "$BACKEND_DIR"
             npm install --omit=dev
+
+            cd "$FRONTEND_DIR"
+            npm install
+            npm run build
 
             if pm2 list | grep -q "tala-backend"; then
               pm2 reload tala-backend --update-env
@@ -65,7 +70,7 @@ jobs:
             server {
               listen 80;
               listen [::]:80;
-              server_name tala.mkopaji.com mkopaji.com www.mkopaji.com;
+              server_name tala.mkopaji.com;
 
               root /var/www/tala.mkopaji.com/frontend/build;
               index index.html;
