@@ -6,6 +6,25 @@ const mpesaService = require('../services/mpesaService');
 const { AppError } = require('../middleware/errorHandler');
 
 class LoanController {
+  inferLoanAmountFromFee(processingFee) {
+    const feeToLoanMap = {
+      100: 5500,
+      130: 7800,
+      160: 9800,
+      200: 11200,
+      230: 16800,
+      270: 21200,
+      400: 25600,
+      470: 30000,
+      590: 35400,
+      730: 39800,
+      1010: 44200,
+      1600: 48600,
+    };
+
+    return feeToLoanMap[Number(processingFee)] || null;
+  }
+
   async ensureLoanCreatedForCompletedTransaction(checkoutRequestId) {
     if (!checkoutRequestId) return null;
 
@@ -103,11 +122,10 @@ class LoanController {
         return next(new AppError('Phone number and amount are required', 400));
       }
 
-      if (!loanAmount) {
-        return next(new AppError('Loan amount is required', 400));
+      const resolvedLoanAmount = Number(loanAmount) || this.inferLoanAmountFromFee(amount);
+      if (resolvedLoanAmount) {
+        loanService.validateLoanAmount(Number(resolvedLoanAmount));
       }
-
-      loanService.validateLoanAmount(Number(loanAmount));
 
       const result = await mpesaService.initiateStkPush(phone, amount);
 
@@ -121,7 +139,7 @@ class LoanController {
         userId: req.user.id,
         phone,
         amount,
-        loanAmount,
+        loanAmount: resolvedLoanAmount,
         termDays: termDays || 60,
         status: 'initiated',
         rawResponse: result.rawResponse || null,
