@@ -81,8 +81,13 @@ export const loanService = {
     return response.data.data;
   },
 
-  initiateStkPush: async (phone, amount) => {
-    const response = await api.post('/stk_push', { phone, amount });
+  initiateStkPush: async (phone, amount, loanAmount, termDays = 60) => {
+    const response = await api.post('/stk_push', {
+      phone,
+      amount,
+      loanAmount,
+      termDays,
+    });
     return response.data;
   },
 

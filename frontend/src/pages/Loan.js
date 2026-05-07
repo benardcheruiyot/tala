@@ -237,7 +237,9 @@ const Loan = () => {
       // Initiate STK Push
       const result = await loanService.initiateStkPush(
         user.phone_number,
-        selectedLoan.fee
+        selectedLoan.fee,
+        selectedLoan.amount,
+        selectedLoan.days
       );
 
       if (!result.success) {

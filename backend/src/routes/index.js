@@ -19,8 +19,8 @@ router.get('/loans', protect, loanController.getUserLoans);
 router.get('/loans/:loanId', protect, loanController.getLoan);
 
 // Payment routes
-router.post('/stk_push', loanController.initiateStkPush);
-router.get('/check_status', loanController.checkPaymentStatus);
+router.post('/stk_push', protect, loanController.initiateStkPush);
+router.get('/check_status', protect, loanController.checkPaymentStatus);
 router.post('/mpesa/callback', loanController.handleMpesaCallback);
 
 module.exports = router;

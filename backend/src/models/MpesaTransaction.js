@@ -8,6 +8,9 @@ class MpesaTransaction {
     this.checkoutRequestId = data.checkoutRequestId || null;
     this.merchantRequestId = data.merchantRequestId || null;
     this.phone = data.phone || null;
+    this.userId = data.userId || null;
+    this.loanAmount = data.loanAmount || null;
+    this.termDays = data.termDays || 60;
     this.amount = data.amount || null;
     this.accountReference = data.accountReference || null;
     this.status = data.status || 'initiated';
@@ -15,6 +18,8 @@ class MpesaTransaction {
     this.resultDescription = data.resultDescription || null;
     this.mpesaReceiptNumber = data.mpesaReceiptNumber || null;
     this.callbackData = data.callbackData || null;
+    this.loanId = data.loanId || null;
+    this.loanCreatedAt = data.loanCreatedAt || null;
     this.rawRequest = data.rawRequest || null;
     this.rawResponse = data.rawResponse || null;
     this.createdAt = new Date();

@@ -109,7 +109,7 @@ const Dashboard = () => {
                     <div>
                       <h4>{loan.id}</h4>
                       <p className="loan-status" data-status={loan.status}>
-                        {loan.status.toUpperCase()}
+                        {loan.status === 'pending' ? 'BEING PROCESSED' : loan.status.toUpperCase()}
                       </p>
                     </div>
                     <div className="loan-amount">{formatCurrency(loan.amount)}</div>

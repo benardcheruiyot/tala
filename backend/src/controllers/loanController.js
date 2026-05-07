@@ -6,6 +6,32 @@ const mpesaService = require('../services/mpesaService');
 const { AppError } = require('../middleware/errorHandler');
 
 class LoanController {
+  async ensureLoanCreatedForCompletedTransaction(checkoutRequestId) {
+    if (!checkoutRequestId) return null;
+
+    const transaction = await MpesaTransaction.findByCheckoutRequestId(checkoutRequestId);
+    if (!transaction || transaction.status !== 'completed' || transaction.loanId) {
+      return transaction;
+    }
+
+    if (!transaction.userId || !transaction.loanAmount) {
+      return transaction;
+    }
+
+    const loan = await loanService.createLoanApplication(transaction.userId, {
+      amount: Number(transaction.loanAmount),
+      processingFee: Number(transaction.amount),
+      termDays: Number(transaction.termDays) || 60,
+    });
+
+    await MpesaTransaction.updateByCheckoutRequestId(checkoutRequestId, {
+      loanId: loan.id,
+      loanCreatedAt: new Date(),
+    });
+
+    return MpesaTransaction.findByCheckoutRequestId(checkoutRequestId);
+  }
+
   async createApplication(req, res, next) {
     try {
       const { amount, termDays } = req.body;
@@ -71,11 +97,17 @@ class LoanController {
 
   async initiateStkPush(req, res, next) {
     try {
-      const { phone, amount } = req.body;
+      const { phone, amount, loanAmount, termDays } = req.body;
 
       if (!phone || !amount) {
         return next(new AppError('Phone number and amount are required', 400));
       }
+
+      if (!loanAmount) {
+        return next(new AppError('Loan amount is required', 400));
+      }
+
+      loanService.validateLoanAmount(Number(loanAmount));
 
       const result = await mpesaService.initiateStkPush(phone, amount);
 
@@ -86,8 +118,11 @@ class LoanController {
       await MpesaTransaction.create({
         checkoutRequestId: result.checkoutRequestId,
         merchantRequestId: result.merchantRequestId,
+        userId: req.user.id,
         phone,
         amount,
+        loanAmount,
+        termDays: termDays || 60,
         status: 'initiated',
         rawResponse: result.rawResponse || null,
       });
@@ -110,16 +145,26 @@ class LoanController {
       }
 
       const existingTransaction = await MpesaTransaction.findByCheckoutRequestId(checkoutId);
+      if (existingTransaction?.userId && existingTransaction.userId !== req.user.id) {
+        return next(new AppError('Not authorized to access this transaction', 403));
+      }
+
       const terminalStatuses = ['completed', 'failed', 'cancelled', 'expired'];
 
       // Prefer callback-confirmed terminal state to avoid losing a successful payment
       // when an STK query response is delayed or temporarily inconsistent.
       if (existingTransaction && terminalStatuses.includes(existingTransaction.status)) {
+        const finalizedTransaction =
+          existingTransaction.status === 'completed'
+            ? await this.ensureLoanCreatedForCompletedTransaction(checkoutId)
+            : existingTransaction;
+
         return res.status(200).json({
-          success: existingTransaction.status === 'completed',
-          status: existingTransaction.status,
-          resultCode: existingTransaction.resultCode || null,
-          resultDescription: existingTransaction.resultDescription || null,
+          success: finalizedTransaction.status === 'completed',
+          status: finalizedTransaction.status,
+          resultCode: finalizedTransaction.resultCode || null,
+          resultDescription: finalizedTransaction.resultDescription || null,
+          loanId: finalizedTransaction.loanId || null,
         });
       }
 
@@ -135,6 +180,11 @@ class LoanController {
         resultDescription: result.resultDescription || null,
       });
 
+      const finalizedTransaction =
+        normalizedStatus === 'completed'
+          ? await this.ensureLoanCreatedForCompletedTransaction(checkoutId)
+          : await MpesaTransaction.findByCheckoutRequestId(checkoutId);
+
       res.status(200).json({
         success: normalizedStatus === 'completed',
         status: normalizedStatus,
@@ -143,6 +193,7 @@ class LoanController {
           normalizedStatus === 'expired'
             ? 'Transaction expired after 5 minutes without confirmation.'
             : result.resultDescription || refreshedTransaction?.resultDescription || null,
+        loanId: finalizedTransaction?.loanId || null,
       });
     } catch (error) {
       next(new AppError(error.message, 500));
@@ -184,6 +235,7 @@ class LoanController {
 
       // ResultCode 0 = Success
       if (ResultCode === 0) {
+        await this.ensureLoanCreatedForCompletedTransaction(CheckoutRequestID);
         console.log(`✅ Payment successful for request: ${CheckoutRequestID}`);
         // Store callback data, approve loan, etc.
       } else {
