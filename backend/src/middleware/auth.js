@@ -1,6 +1,7 @@
 // Authentication Middleware
 const jwt = require('jsonwebtoken');
 const { AppError } = require('./errorHandler');
+const { getJwtSecret } = require('../utils/jwtSecret');
 
 const protect = (req, res, next) => {
   try {
@@ -10,7 +11,7 @@ const protect = (req, res, next) => {
       return next(new AppError('No token provided', 401));
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
     req.user = decoded;
     next();
   } catch (error) {

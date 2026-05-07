@@ -7,6 +7,8 @@ class MpesaService {
     this.consumerSecret = String(process.env.MPESA_CONSUMER_SECRET || '').trim();
     this.environment = String(process.env.MPESA_ENVIRONMENT || 'production').trim();
     this.shortcode = String(process.env.MPESA_SHORTCODE || '').trim();
+    this.partyB = String(process.env.MPESA_PARTYB || this.shortcode).trim();
+    this.businessCode = String(this.partyB || this.shortcode).trim();
     this.passkey = String(process.env.MPESA_PASSKEY || '').trim();
     this.transactionType = String(process.env.MPESA_TRANSACTION_TYPE || 'CustomerPayBillOnline').trim();
     
@@ -22,10 +24,10 @@ class MpesaService {
 
   isProperlyConfigured() {
     const hasKeys = Boolean(this.consumerKey && this.consumerSecret);
-    const hasShortcode = Boolean(this.shortcode);
+    const hasBusinessCode = Boolean(this.businessCode);
     const hasPasskey = Boolean(this.passkey);
 
-    return hasKeys && hasShortcode && hasPasskey && this.environment === 'production';
+    return hasKeys && hasBusinessCode && hasPasskey && this.environment === 'production';
   }
 
   getBaseUrl() {
@@ -110,19 +112,19 @@ class MpesaService {
         .slice(0, -3);
 
       const password = Buffer.from(
-        `${this.shortcode}${this.passkey}${timestamp}`
+        `${this.businessCode}${this.passkey}${timestamp}`
       ).toString('base64');
 
       const callbackUrl = String(process.env.MPESA_CALLBACK_URL || '').trim();
 
       const payload = {
-        BusinessShortCode: this.shortcode,
+        BusinessShortCode: this.businessCode,
         Password: password,
         Timestamp: timestamp,
         TransactionType: this.transactionType,
         Amount: amount,
         PartyA: normalizedPhone,
-        PartyB: this.shortcode,
+        PartyB: this.partyB,
         PhoneNumber: normalizedPhone,
         CallBackURL: callbackUrl,
         AccountReference: `LoanApp-${Date.now()}`,
@@ -183,11 +185,11 @@ class MpesaService {
         .slice(0, -3);
 
       const password = Buffer.from(
-        `${this.shortcode}${this.passkey}${timestamp}`
+        `${this.businessCode}${this.passkey}${timestamp}`
       ).toString('base64');
 
       const payload = {
-        BusinessShortCode: this.shortcode,
+        BusinessShortCode: this.businessCode,
         Password: password,
         Timestamp: timestamp,
         CheckoutRequestID: checkoutRequestId,
