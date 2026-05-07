@@ -1,5 +1,5 @@
 // Home.js - Landing Page
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import Header from '../components/Header';
@@ -9,6 +9,10 @@ import './Home.css';
 const Home = () => {
   const navigate = useNavigate();
   const [isNavigating, setIsNavigating] = useState(false);
+
+  useEffect(() => {
+    document.title = 'Tala Mkopo Extra';
+  }, []);
 
   const handleApplyNow = () => {
     if (isNavigating) return;

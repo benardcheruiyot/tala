@@ -16,14 +16,12 @@
   gap: 0.6rem;
   color: var(--primary);
   margin-bottom: 0.8rem;
-  font-size: 1.55rem;
+  font-size: 1.45rem;
 }
 
 .section-icon {
-  font-size: 1.2rem;
-  background: #ecf5ff;
-  border-radius: 8px;
-  padding: 0.25rem 0.45rem;
+  display: inline-flex;
+  color: var(--primary);
 }
 
 .eligibility-form {
@@ -36,13 +34,21 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  position: relative;
 }
 
 .form-group label,
 .requirements label {
-  font-size: 0.001px;
-  height: 0;
-  overflow: hidden;
+  position: absolute;
+  left: 0.95rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  font-size: 0.95rem;
+  background: #f8fafc;
+  padding: 0 0.3rem;
+  pointer-events: none;
+  transition: var(--transition);
 }
 
 .form-group input,
@@ -56,6 +62,19 @@
   color: #334155;
   background: #f8fafc;
   transition: var(--transition);
+}
+
+.select-field label {
+  top: -0.5rem;
+  transform: none;
+  font-size: 0.8rem;
+}
+
+.floating-field input:focus + label,
+.floating-field input:not(:placeholder-shown) + label {
+  top: -0.5rem;
+  transform: none;
+  font-size: 0.8rem;
 }
 
 .form-group input:focus,
@@ -85,6 +104,7 @@
   background: transparent;
   border: none;
   padding: 0;
+  position: relative;
 }
 
 .secure-row {
@@ -94,6 +114,12 @@
   margin-top: 0.3rem;
   color: #64748b;
   font-size: 0.86rem;
+}
+
+.secure-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .footnote {

@@ -1,5 +1,5 @@
 // Eligibility.js - User Registration/Eligibility Page
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -17,6 +17,10 @@ const Eligibility = () => {
     national_id: '',
     loan_type: '',
   });
+
+  useEffect(() => {
+    document.title = 'Loan Eligibility | Tala Mkopo Extra';
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -88,57 +92,71 @@ const Eligibility = () => {
       <div className="eligibility-content">
         <div className="eligibility-card card">
           <h2>
-            <span className="section-icon">👤</span>
+            <span className="section-icon" aria-hidden="true">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M20 21a8 8 0 0 0-16 0"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </span>
             Personal Information
           </h2>
 
           <form onSubmit={handleSubmit} className="eligibility-form">
-            <div className="form-group">
-              <label htmlFor="name">Full Name (Optional)</label>
+            <div className="form-group floating-field">
               <input
                 id="name"
                 type="text"
                 name="name"
-                placeholder="Full Name"
+                placeholder=" "
                 value={formData.name}
                 onChange={handleChange}
                 disabled={loading}
               />
+              <label htmlFor="name">Full Name</label>
               <small>Enter your full name as on your national ID</small>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="phone_number">Phone Number *</label>
+            <div className="form-group floating-field">
               <input
                 id="phone_number"
                 type="tel"
                 name="phone_number"
-                placeholder="Phone Number"
+                placeholder=" "
                 value={formData.phone_number}
                 onChange={handleChange}
                 required
                 disabled={loading}
               />
+              <label htmlFor="phone_number">Phone Number</label>
               <small>Safaricom only - e.g. 0712 345 678 or 0110 123 456</small>
             </div>
 
-            <div className="requirements">
-              <label htmlFor="national_id">National ID Number</label>
+            <div className="requirements floating-field">
               <input
                 id="national_id"
                 type="text"
                 name="national_id"
-                placeholder="National ID Number"
+                placeholder=" "
                 value={formData.national_id}
                 onChange={handleChange}
                 required
                 disabled={loading}
               />
+              <label htmlFor="national_id">National ID Number</label>
               <small>7 or 8 digit Kenyan National ID number</small>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="loan_type">Select Loan Type</label>
+            <div className="form-group select-field">
               <select
                 id="loan_type"
                 name="loan_type"
@@ -156,13 +174,29 @@ const Eligibility = () => {
                 <option value="medical">Medical Loan</option>
                 <option value="emergency">Emergency Loan</option>
               </select>
+              <label htmlFor="loan_type">Select Loan Type</label>
               <small>Choose the purpose of your loan</small>
             </div>
 
             <div className="secure-row">
-              <span>🔒 Secure</span>
-              <span>🛡️ Licensed</span>
-              <span>✅ No CRB Check</span>
+              <span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 1.5 4 5v6c0 5.2 3.3 9.8 8 11.5 4.7-1.7 8-6.3 8-11.5V5l-8-3.5z"></path>
+                </svg>
+                Secure
+              </span>
+              <span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2 4 7v6c0 5 3.5 9.7 8 11 4.5-1.3 8-6 8-11V7l-8-5z"></path>
+                </svg>
+                Licensed
+              </span>
+              <span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="m9 16.2-3.5-3.5L4 14.2 9 19l11-11-1.5-1.5z"></path>
+                </svg>
+                No CRB Check
+              </span>
             </div>
 
             <button type="submit" className="btn-primary" disabled={loading}>

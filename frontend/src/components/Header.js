@@ -10,7 +10,7 @@ const Header = ({ showHelp = true, logoInitial = 'T' }) => {
         <div className="logo-text">Tala Mkopo Extra</div>
       </div>
       {showHelp && (
-        <a href="/help" className="help-link">
+        <a href="/#" className="help-link">
           <span>Help</span>
           <svg
             xmlns="http://www.w3.org/2000/svg"
