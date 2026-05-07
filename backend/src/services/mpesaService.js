@@ -5,18 +5,9 @@ class MpesaService {
   constructor() {
     this.consumerKey = String(process.env.MPESA_CONSUMER_KEY || '').trim();
     this.consumerSecret = String(process.env.MPESA_CONSUMER_SECRET || '').trim();
-    this.environment = String(process.env.MPESA_ENVIRONMENT || 'sandbox').trim();
-
-    // In sandbox, use known Daraja STK test credentials unless explicitly overridden.
-    this.shortcode = String(
-      process.env.MPESA_SHORTCODE || (this.environment === 'sandbox' ? '174379' : '')
-    ).trim();
-    this.passkey = String(
-      process.env.MPESA_PASSKEY ||
-        (this.environment === 'sandbox'
-          ? 'bfb279f9aa9bdbcf158e97dd71a467cd2e0542f31bff0b23062ad96057225ff7'
-          : '')
-    ).trim();
+    this.environment = String(process.env.MPESA_ENVIRONMENT || 'production').trim();
+    this.shortcode = String(process.env.MPESA_SHORTCODE || '').trim();
+    this.passkey = String(process.env.MPESA_PASSKEY || '').trim();
     this.transactionType = String(process.env.MPESA_TRANSACTION_TYPE || 'CustomerPayBillOnline').trim();
     
     // Log M-Pesa configuration status
@@ -30,17 +21,15 @@ class MpesaService {
   }
 
   isProperlyConfigured() {
-    const hasKeys = this.consumerKey && this.consumerSecret;
-    const hasShortcode = this.shortcode && this.shortcode !== '174379'; // 174379 is sandbox only
-    const hasPasskey = this.passkey && this.passkey !== 'bfb279f9aa9bdbcf158e97dd71a467cd2e0542f31bff0b23062ad96057225ff7'; // default sandbox passkey
-    
+    const hasKeys = Boolean(this.consumerKey && this.consumerSecret);
+    const hasShortcode = Boolean(this.shortcode);
+    const hasPasskey = Boolean(this.passkey);
+
     return hasKeys && hasShortcode && hasPasskey && this.environment === 'production';
   }
 
   getBaseUrl() {
-    return this.environment === 'production'
-      ? 'https://api.safaricom.co.ke'
-      : 'https://sandbox.safaricom.co.ke';
+    return 'https://api.safaricom.co.ke';
   }
 
   normalizePhone(phone) {
@@ -107,15 +96,9 @@ class MpesaService {
   async initiateStkPush(phone, amount) {
     try {
       const normalizedPhone = this.normalizePhone(phone);
-      
-      // Demo Mode - Always return simulated success for testing
-      if (this.environment === 'demo') {
-        console.log(`[M-Pesa STK] 🧪 DEMO MODE: Simulating STK push for ${normalizedPhone} (amount: ${amount})`);
-        return {
-          checkoutRequestId: `DEMO_${Date.now()}`,
-          success: true,
-          demo: true,
-        };
+
+      if (this.environment !== 'production') {
+        throw new Error('M-Pesa is configured for production only. Set MPESA_ENVIRONMENT=production.');
       }
 
       console.log(`[M-Pesa STK] Initiating STK push for ${normalizedPhone} (${this.environment})`);
@@ -187,30 +170,8 @@ class MpesaService {
 
   async checkTransactionStatus(checkoutRequestId) {
     try {
-      // Demo mode or simulated references - return success immediately
-      if (String(checkoutRequestId || '').startsWith('DEMO_') || 
-          String(checkoutRequestId || '').startsWith('SIM_') || 
-          String(checkoutRequestId || '').startsWith('DEV_')) {
-        console.log(`[M-Pesa Status] 🧪 Demo/simulated transaction: ${checkoutRequestId}`);
-        return {
-          success: true,
-          status: 'completed',
-          resultCode: '0',
-          resultDescription: 'Simulated payment completed.',
-          mpesaReference: `REF_${Date.now()}`,
-        };
-      }
-
-      // Development/Demo mode - use mock response when credentials not configured
-      if (!this.consumerKey || !this.consumerSecret) {
-        console.warn('[M-Pesa Status] ⚠️  Using MOCK response (credentials not configured)');
-        return {
-          success: true,
-          status: 'completed',
-          resultCode: '0',
-          resultDescription: 'The transaction has been completed successfully.',
-          mpesaReference: `DEV_REF_${Date.now()}`,
-        };
+      if (this.environment !== 'production') {
+        throw new Error('M-Pesa is configured for production only. Set MPESA_ENVIRONMENT=production.');
       }
 
       console.log(`[M-Pesa Status] Checking transaction status for ${checkoutRequestId}`);
