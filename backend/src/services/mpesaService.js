@@ -8,7 +8,7 @@ class MpesaService {
     this.environment = String(process.env.MPESA_ENVIRONMENT || 'production').trim();
     this.shortcode = String(process.env.MPESA_SHORTCODE || '').trim();
     this.partyB = String(process.env.MPESA_PARTYB || this.shortcode).trim();
-    this.businessCode = String(this.partyB || this.shortcode).trim();
+    this.businessCode = String(this.shortcode || this.partyB).trim();
     this.passkey = String(process.env.MPESA_PASSKEY || '').trim();
     this.transactionType = String(process.env.MPESA_TRANSACTION_TYPE || 'CustomerPayBillOnline').trim();
     this.httpsAgent = new https.Agent({ family: 4, keepAlive: false });
