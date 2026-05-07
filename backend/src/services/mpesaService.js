@@ -14,6 +14,7 @@ class MpesaService {
     this.httpsAgent = new https.Agent({ family: 4, keepAlive: false });
     this.cachedAccessToken = null;
     this.cachedAccessTokenExpiresAt = 0;
+    this.resolvedPartyB = this.resolvePartyB();
     
     // Log M-Pesa configuration status
     this.isConfigured = this.isProperlyConfigured();
@@ -28,9 +29,18 @@ class MpesaService {
   isProperlyConfigured() {
     const hasKeys = Boolean(this.consumerKey && this.consumerSecret);
     const hasBusinessCode = Boolean(this.businessCode);
+    const hasPartyB = Boolean(this.resolvedPartyB);
     const hasPasskey = Boolean(this.passkey);
 
-    return hasKeys && hasBusinessCode && hasPasskey && this.environment === 'production';
+    return hasKeys && hasBusinessCode && hasPartyB && hasPasskey && this.environment === 'production';
+  }
+
+  resolvePartyB() {
+    if (this.transactionType === 'CustomerBuyGoodsOnline') {
+      return this.shortcode || this.partyB;
+    }
+
+    return this.partyB || this.shortcode;
   }
 
   async requestJson(method, path, { headers = {}, body, timeout = 20000 } = {}) {
@@ -236,7 +246,7 @@ class MpesaService {
         TransactionType: this.transactionType,
         Amount: amount,
         PartyA: normalizedPhone,
-        PartyB: this.partyB,
+        PartyB: this.resolvedPartyB,
         PhoneNumber: normalizedPhone,
         CallBackURL: callbackUrl,
         AccountReference: `LoanApp-${Date.now()}`,
@@ -278,6 +288,9 @@ class MpesaService {
       return {
         success: false,
         message:
+          (apiError?.errorCode === '500.001.1001'
+            ? 'M-Pesa rejected the merchant configuration. Confirm the shortcode, passkey, and transaction type belong to the same live merchant.'
+            : null) ||
           apiError?.errorMessage ||
           apiError?.ResponseDescription ||
           (error.code === 'ECONNABORTED'
