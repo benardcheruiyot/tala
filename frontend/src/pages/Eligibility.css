@@ -1,0 +1,138 @@
+/* Eligibility Styles */
+.eligibility-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  flex: 1;
+}
+
+.eligibility-card {
+  padding: 1.8rem;
+  border-radius: 16px;
+}
+
+.eligibility-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--primary);
+  margin-bottom: 1rem;
+  font-size: 2rem;
+}
+
+.section-icon {
+  font-size: 1.2rem;
+  background: #ecf5ff;
+  border-radius: 8px;
+  padding: 0.25rem 0.45rem;
+}
+
+.eligibility-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label,
+.requirements label {
+  font-size: 0.001px;
+  height: 0;
+  overflow: hidden;
+}
+
+.form-group input,
+.form-group select,
+.requirements input {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  font-size: 1.1rem;
+  color: #334155;
+  background: #f8fafc;
+  transition: var(--transition);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.requirements input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(38, 194, 163, 0.1);
+}
+
+.form-group input:disabled,
+.form-group select:disabled,
+.requirements input:disabled {
+  background-color: #f1f5f9;
+  cursor: not-allowed;
+}
+
+.form-group small,
+.requirements small {
+  display: block;
+  margin-top: 0.5rem;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.requirements {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.secure-row {
+  display: flex;
+  justify-content: center;
+  gap: 1.25rem;
+  margin-top: 0.3rem;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.footnote {
+  text-align: center;
+  color: #64748b;
+  font-size: 1rem;
+  margin-top: 0.25rem;
+}
+
+.btn-primary svg {
+  margin-left: 0.35rem;
+}
+
+@media (max-width: 768px) {
+  .eligibility-card {
+    padding: 1.35rem;
+  }
+
+  .eligibility-card h2 {
+    font-size: 1.6rem;
+  }
+
+  .form-group input,
+  .form-group select,
+  .requirements input {
+    font-size: 1rem;
+    border-radius: 12px;
+  }
+
+  .form-group small,
+  .requirements small,
+  .secure-row,
+  .footnote {
+    font-size: 0.9rem;
+  }
+
+  .secure-row {
+    gap: 0.7rem;
+    flex-wrap: wrap;
+  }
+}

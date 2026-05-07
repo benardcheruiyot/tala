@@ -1,0 +1,32 @@
+/* Footer Styles */
+.footer {
+  background-color: var(--primary-dark);
+  color: white;
+  padding: 1.5rem;
+  text-align: center;
+  margin-top: auto;
+  border-radius: 16px;
+}
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.footer-links a {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: var(--transition);
+}
+
+.footer-links a:hover {
+  color: white;
+}
+
+.footer p {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
