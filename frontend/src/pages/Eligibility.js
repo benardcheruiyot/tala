@@ -10,6 +10,7 @@ import './Eligibility.css';
 const Eligibility = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const apiBaseUrl = process.env.REACT_APP_API_URL || 'https://tala-1-179w.onrender.com/api';
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -42,9 +43,9 @@ const Eligibility = () => {
 
       // Check backend connectivity
       try {
-        await fetch('http://localhost:5000/api/health');
+        await fetch(`${apiBaseUrl}/health`);
       } catch (err) {
-        throw new Error('Backend server is not running. Please start it with: cd backend && npm run dev');
+        throw new Error('Backend is unreachable. Please verify the API URL and server status.');
       }
 
       await login(formData.name.trim() || 'Customer', phone);
@@ -67,7 +68,7 @@ const Eligibility = () => {
       
       const message =
         error?.code === 'ERR_NETWORK'
-          ? 'Cannot reach server. Make sure backend is running: cd backend && npm run dev'
+          ? 'Cannot reach backend server. Please try again shortly.'
           : error.message || 'Registration failed';
 
       Swal.fire('Error', message, 'error');

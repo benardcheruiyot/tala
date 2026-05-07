@@ -72,12 +72,33 @@ class MpesaService {
           headers: {
             Authorization: `Basic ${auth}`,
           },
+          timeout: 20000,
         }
       );
 
       return response.data.access_token;
     } catch (error) {
-      console.error('Error getting M-Pesa access token:', error.message);
+      const apiData = error.response?.data;
+      const statusCode = error.response?.status;
+
+      console.error('[M-Pesa OAuth] Failed to get access token');
+      console.error('[M-Pesa OAuth] Environment:', this.environment);
+      console.error('[M-Pesa OAuth] Status:', statusCode || 'no-response');
+      console.error('[M-Pesa OAuth] Message:', error.message);
+      if (apiData) {
+        console.error('[M-Pesa OAuth] API error:', apiData);
+      }
+
+      if (error.code === 'ECONNABORTED' || !error.response) {
+        throw new Error(
+          'Cannot reach Safaricom OAuth endpoint from this server/network. Check outbound internet/firewall and try again.'
+        );
+      }
+
+      if (statusCode === 401 || statusCode === 403 || statusCode === 400) {
+        throw new Error('M-Pesa OAuth rejected credentials. Confirm Consumer Key/Secret and environment.');
+      }
+
       throw new Error('Failed to authenticate with M-Pesa');
     }
   }
