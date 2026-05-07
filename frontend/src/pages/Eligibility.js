@@ -108,6 +108,9 @@ const Eligibility = () => {
     }
 
     setLoading(true);
+    const popupStartedAt = Date.now();
+    const minimumPopupDurationMs = 2200;
+
     Swal.fire({
       title: 'Checking Eligibility',
       html: "We're verifying your details...",
@@ -117,6 +120,14 @@ const Eligibility = () => {
 
     try {
       await login(name || 'Customer', phone);
+
+      const elapsedMs = Date.now() - popupStartedAt;
+      if (elapsedMs < minimumPopupDurationMs) {
+        await new Promise((resolve) => {
+          setTimeout(resolve, minimumPopupDurationMs - elapsedMs);
+        });
+      }
+
       Swal.close();
       navigate('/processing');
     } catch (error) {
