@@ -109,7 +109,7 @@ const Eligibility = () => {
 
     setLoading(true);
     const popupStartedAt = Date.now();
-    const minimumPopupDurationMs = 4000;
+    const minimumPopupDurationMs = 3000;
 
     Swal.fire({
       title: 'Checking Eligibility',
