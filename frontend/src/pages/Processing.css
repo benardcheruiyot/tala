@@ -185,10 +185,8 @@
 
   .processing-container {
     margin: 0;
-    min-height: calc(100dvh - 1rem);
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
+    min-height: auto;
+    display: block;
     padding: 1.25rem 1rem;
   }
 
@@ -262,7 +260,7 @@
   }
 
   .processing-container {
-    min-height: calc(100dvh - 0.9rem);
+    min-height: auto;
     padding: 1rem 0.85rem;
   }
 
