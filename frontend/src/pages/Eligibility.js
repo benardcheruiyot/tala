@@ -30,11 +30,22 @@ const Eligibility = () => {
     e.preventDefault();
     setLoading(true);
 
+    Swal.fire({
+      title: 'Checking Eligibility',
+      text: "We're verifying your details...",
+      showConfirmButton: false,
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+
     try {
       const phone = formData.phone_number.trim();
       const nationalId = formData.national_id.trim();
 
       if (!phone || !nationalId || !formData.loan_type) {
+        Swal.close();
         Swal.fire('Error', 'Please complete all required fields', 'error');
         setLoading(false);
         return;
@@ -54,18 +65,6 @@ const Eligibility = () => {
 
       await login(formData.name.trim() || 'Customer', phone);
 
-      await Swal.fire({
-        title: 'Checking Eligibility',
-        text: "We're verifying your details...",
-        timer: 1800,
-        timerProgressBar: false,
-        showConfirmButton: false,
-        allowOutsideClick: false,
-        didOpen: () => {
-          Swal.showLoading();
-        },
-      });
-
       navigate('/processing');
     } catch (error) {
       console.error('[ELIGIBILITY] Error:', error);
@@ -75,6 +74,7 @@ const Eligibility = () => {
           ? 'Cannot reach backend server. Please try again shortly.'
           : error.message || 'Registration failed';
 
+      Swal.close();
       Swal.fire('Error', message, 'error');
     } finally {
       setLoading(false);

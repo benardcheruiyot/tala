@@ -9,7 +9,7 @@
 .dashboard-welcome {
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: white;
-  padding: 1.75rem;
+  padding: 1.25rem;
 }
 
 .welcome-header {
@@ -37,7 +37,7 @@
 
 .welcome-header h2 {
   margin-bottom: 0.5rem;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
 }
 
 .welcome-subtitle {
@@ -47,7 +47,7 @@
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 1rem;
 }
 
@@ -176,7 +176,7 @@
 }
 
 .loan-amount {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: var(--primary);
 }
