@@ -20,7 +20,17 @@ const configuredOrigins = [
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean),
-];
+]
+  .filter(Boolean)
+  .flatMap((origin) => {
+    try {
+      const url = new URL(origin);
+      const host = url.host;
+      return [`https://${host}`, `http://${host}`];
+    } catch {
+      return [origin];
+    }
+  });
 
 const allowedOrigins = [
   ...configuredOrigins,
