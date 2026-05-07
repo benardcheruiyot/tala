@@ -45,3 +45,31 @@
 .help-link:hover {
   color: var(--primary);
 }
+
+@media (max-width: 480px) {
+  .header {
+    gap: 0.75rem;
+  }
+
+  .logo {
+    min-width: 0;
+  }
+
+  .logo-icon {
+    width: 34px;
+    height: 34px;
+    font-size: 1rem;
+    border-radius: 8px;
+  }
+
+  .logo-text {
+    font-size: 1.15rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .help-link span {
+    display: none;
+  }
+}

@@ -7,7 +7,7 @@
 
 .apply-container {
   width: 100%;
-  max-width: 560px;
+  max-width: 100%;
   margin: 0 auto;
   padding-bottom: 1rem;
 }
@@ -77,6 +77,7 @@
 .recent-loans-box p {
   color: #657289;
   font-size: 0.86rem;
+  word-break: break-word;
 }
 
 .recent-loan-ticker {
@@ -194,5 +195,32 @@
 
   .amounts-panel h2 {
     font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .loan-content {
+    padding: 1rem;
+  }
+
+  .loan-content h1 {
+    font-size: 1.25rem;
+  }
+
+  .loan-grid {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+  }
+
+  .loan-option {
+    padding: 0.85rem 0.65rem;
+  }
+
+  .loan-amount {
+    font-size: 0.95rem;
+  }
+
+  .processing-fee {
+    font-size: 0.78rem;
   }
 }
