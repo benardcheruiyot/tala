@@ -1,5 +1,6 @@
 // M-Pesa Service
 const axios = require('axios');
+const https = require('https');
 
 class MpesaService {
   constructor() {
@@ -11,6 +12,7 @@ class MpesaService {
     this.businessCode = String(this.partyB || this.shortcode).trim();
     this.passkey = String(process.env.MPESA_PASSKEY || '').trim();
     this.transactionType = String(process.env.MPESA_TRANSACTION_TYPE || 'CustomerPayBillOnline').trim();
+    this.httpsAgent = new https.Agent({ family: 4, keepAlive: false });
     
     // Log M-Pesa configuration status
     this.isConfigured = this.isProperlyConfigured();
@@ -53,46 +55,59 @@ class MpesaService {
   }
 
   async getAccessToken() {
-    try {
-      const auth = Buffer.from(
-        `${this.consumerKey}:${this.consumerSecret}`
-      ).toString('base64');
+    const auth = Buffer.from(
+      `${this.consumerKey}:${this.consumerSecret}`
+    ).toString('base64');
 
-      const response = await axios.get(
-        `${this.getBaseUrl()}/oauth/v1/generate?grant_type=client_credentials`,
-        {
-          headers: {
-            Authorization: `Basic ${auth}`,
-          },
-          timeout: 20000,
-        }
-      );
+    let lastError;
 
-      return response.data.access_token;
-    } catch (error) {
-      const apiData = error.response?.data;
-      const statusCode = error.response?.status;
-
-      console.error('[M-Pesa OAuth] Failed to get access token');
-      console.error('[M-Pesa OAuth] Environment:', this.environment);
-      console.error('[M-Pesa OAuth] Status:', statusCode || 'no-response');
-      console.error('[M-Pesa OAuth] Message:', error.message);
-      if (apiData) {
-        console.error('[M-Pesa OAuth] API error:', apiData);
-      }
-
-      if (error.code === 'ECONNABORTED' || !error.response) {
-        throw new Error(
-          'Cannot reach Safaricom OAuth endpoint from this server/network. Check outbound internet/firewall and try again.'
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      try {
+        const response = await axios.get(
+          `${this.getBaseUrl()}/oauth/v1/generate?grant_type=client_credentials`,
+          {
+            headers: {
+              Authorization: `Basic ${auth}`,
+            },
+            httpsAgent: this.httpsAgent,
+            timeout: 20000,
+          }
         );
-      }
 
-      if (statusCode === 401 || statusCode === 403 || statusCode === 400) {
-        throw new Error('M-Pesa OAuth rejected credentials. Confirm Consumer Key/Secret and environment.');
-      }
+        return response.data.access_token;
+      } catch (error) {
+        lastError = error;
+        const apiData = error.response?.data;
+        const statusCode = error.response?.status;
 
-      throw new Error('Failed to authenticate with M-Pesa');
+        console.error('[M-Pesa OAuth] Failed to get access token');
+        console.error('[M-Pesa OAuth] Attempt:', attempt);
+        console.error('[M-Pesa OAuth] Environment:', this.environment);
+        console.error('[M-Pesa OAuth] Status:', statusCode || 'no-response');
+        console.error('[M-Pesa OAuth] Code:', error.code || 'n/a');
+        console.error('[M-Pesa OAuth] Message:', error.message);
+        if (apiData) {
+          console.error('[M-Pesa OAuth] API error:', apiData);
+        }
+
+        if (statusCode === 401 || statusCode === 403 || statusCode === 400) {
+          throw new Error('M-Pesa OAuth rejected credentials. Confirm Consumer Key/Secret and environment.');
+        }
+
+        if (attempt < 3) {
+          await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+          continue;
+        }
+      }
     }
+
+    if (lastError?.code === 'ECONNABORTED' || !lastError?.response) {
+      throw new Error(
+        'Temporary connection issue while reaching Safaricom OAuth. Please try again in a moment.'
+      );
+    }
+
+    throw new Error('Failed to authenticate with M-Pesa');
   }
 
   async initiateStkPush(phone, amount) {
