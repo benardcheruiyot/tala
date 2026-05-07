@@ -291,16 +291,37 @@ const Loan = () => {
           if (statusResult.success) {
             clearInterval(paymentPollRef.current);
 
-            Swal.fire(
-              {
-                icon: 'warning',
-                title: 'Loan Not Processed',
-                text:
-                  statusResult.resultDescription ||
-                  'Your loan will not be processed because the processing fee was not paid.',
-                confirmButtonColor: '#26c2a3',
-              }
-            );
+            Swal.fire({
+              title: 'Payment Received',
+              html: `
+                <div class="stk-modal-content">
+                  <div class="stk-success-check">✓</div>
+                  <p class="stk-instruction">Your loan is now being processed. Please wait up to 48 hours for disbursement.</p>
+                </div>
+              `,
+              customClass: {
+                popup: 'stk-modal',
+              },
+              timer: 2400,
+              showConfirmButton: false,
+            }).then(() => {
+              if (isMountedRef.current) setLoading(false);
+              navigate('/dashboard');
+            });
+          } else if (
+            statusResult.status === 'failed' ||
+            statusResult.status === 'cancelled' ||
+            statusResult.status === 'expired'
+          ) {
+            clearInterval(paymentPollRef.current);
+            Swal.fire({
+              icon: 'warning',
+              title: 'Loan Not Processed',
+              text:
+                statusResult.resultDescription ||
+                'Your loan will not be processed because the processing fee was not paid.',
+              confirmButtonColor: '#26c2a3',
+            });
             if (isMountedRef.current) setLoading(false);
           } else if (attempts >= maxAttempts) {
             clearInterval(paymentPollRef.current);

@@ -109,19 +109,39 @@ class LoanController {
         return next(new AppError('Checkout ID is required', 400));
       }
 
+      const existingTransaction = await MpesaTransaction.findByCheckoutRequestId(checkoutId);
+      if (existingTransaction?.status === 'expired') {
+        return res.status(200).json({
+          success: false,
+          status: 'expired',
+          resultCode: existingTransaction.resultCode || 'TIMEOUT',
+          resultDescription:
+            existingTransaction.resultDescription ||
+            'Transaction expired after 5 minutes without confirmation.',
+        });
+      }
+
       const result = await mpesaService.checkTransactionStatus(checkoutId);
 
+      const normalizedStatus =
+        result.status === 'pending' && existingTransaction
+          ? (await MpesaTransaction.findByCheckoutRequestId(checkoutId))?.status || result.status
+          : result.status;
+
       await MpesaTransaction.updateByCheckoutRequestId(checkoutId, {
-        status: result.status,
+        status: normalizedStatus,
         resultCode: result.resultCode || null,
         resultDescription: result.resultDescription || null,
       });
 
       res.status(200).json({
-        success: result.success,
-        status: result.status,
+        success: normalizedStatus === 'completed',
+        status: normalizedStatus,
         resultCode: result.resultCode,
-        resultDescription: result.resultDescription,
+        resultDescription:
+          normalizedStatus === 'expired'
+            ? 'Transaction expired after 5 minutes without confirmation.'
+            : result.resultDescription,
       });
     } catch (error) {
       next(new AppError(error.message, 500));
