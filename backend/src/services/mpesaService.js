@@ -26,7 +26,7 @@ class MpesaService {
       console.log(`[M-Pesa] ✅ M-Pesa is configured for ${this.environment}`);
       if (this.isBuyGoodsTransaction(this.transactionType) && this.partyB && this.partyB !== this.businessCode) {
         console.warn(
-          `[M-Pesa] MPESA_PARTYB (${this.partyB}) differs from MPESA_SHORTCODE (${this.businessCode}). Using shortcode as PartyB for CustomerBuyGoodsOnline.`
+          `[M-Pesa] MPESA_PARTYB (${this.partyB}) differs from MPESA_SHORTCODE (${this.businessCode}). Using MPESA_PARTYB as configured.`
         );
       }
     }
@@ -60,11 +60,7 @@ class MpesaService {
   }
 
   resolvePartyB(transactionType = this.transactionType) {
-    // For Buy Goods STK push, PartyB should match BusinessShortCode.
-    if (this.isBuyGoodsTransaction(transactionType)) {
-      return this.businessCode;
-    }
-
+    // Always honor the configured destination account for STK requests.
     return this.partyB || this.shortcode;
   }
 
