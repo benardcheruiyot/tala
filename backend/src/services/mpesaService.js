@@ -1,5 +1,7 @@
 // M-Pesa Service
 const https = require('https');
+const path = require('path');
+const dotenv = require('dotenv');
 
 class MpesaService {
   constructor() {
@@ -33,15 +35,29 @@ class MpesaService {
   }
 
   refreshRuntimeConfig() {
+    // Reload .env so runtime edits (like MPESA_PARTYB changes) are applied.
+    dotenv.config({
+      path: path.resolve(__dirname, '../../.env'),
+      override: true,
+    });
+
     const latestShortcode = String(process.env.MPESA_SHORTCODE || '').trim();
     const latestPartyB = String(process.env.MPESA_PARTYB || latestShortcode).trim();
     const latestTransactionType = String(
       process.env.MPESA_TRANSACTION_TYPE || 'CustomerPayBillOnline'
     ).trim();
+    const latestPasskey = String(process.env.MPESA_PASSKEY || '').trim();
+    const latestConsumerKey = String(process.env.MPESA_CONSUMER_KEY || '').trim();
+    const latestConsumerSecret = String(process.env.MPESA_CONSUMER_SECRET || '').trim();
+    const latestEnvironment = String(process.env.MPESA_ENVIRONMENT || this.environment).trim();
 
     this.shortcode = latestShortcode;
     this.partyB = latestPartyB;
     this.businessCode = String(this.resolveBusinessShortCode(latestTransactionType)).trim();
+    this.passkey = latestPasskey || this.passkey;
+    this.consumerKey = latestConsumerKey || this.consumerKey;
+    this.consumerSecret = latestConsumerSecret || this.consumerSecret;
+    this.environment = latestEnvironment || this.environment;
 
     const previousConfiguredType = this.transactionType;
     this.transactionType = latestTransactionType;
