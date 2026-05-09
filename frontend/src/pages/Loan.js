@@ -377,14 +377,20 @@ const Loan = () => {
             if (isMountedRef.current) setLoading(false);
           }
         } catch (error) {
-          clearInterval(paymentPollRef.current);
-          Swal.fire({
-            icon: 'error',
-            title: 'Status Check Failed',
-            text: 'We could not confirm payment status. Please try again shortly.',
-            confirmButtonColor: '#26c2a3',
-          });
-          if (isMountedRef.current) setLoading(false);
+          console.warn('Status check attempt failed:', error);
+
+          // Do not fail immediately on transient API/network errors.
+          // Continue polling until timeout to allow callback/query recovery.
+          if (attempts >= maxAttempts) {
+            clearInterval(paymentPollRef.current);
+            Swal.fire({
+              icon: 'info',
+              title: 'Confirmation Delayed',
+              text: 'We are still verifying your payment. If you already paid, check your loan page again in a minute.',
+              confirmButtonColor: '#26c2a3',
+            });
+            if (isMountedRef.current) setLoading(false);
+          }
         }
       }, 3000);
     } catch (error) {

@@ -239,7 +239,13 @@ class LoanController {
       });
     } catch (error) {
       console.error('[Check Status] Error:', error.message, error.stack);
-      next(new AppError(error.message, 500));
+      return res.status(200).json({
+        success: false,
+        status: 'pending',
+        resultCode: null,
+        resultDescription: 'Payment confirmation is delayed. Please keep waiting.',
+        loanId: null,
+      });
     }
   }
 
