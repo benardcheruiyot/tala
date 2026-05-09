@@ -232,6 +232,33 @@ class MpesaService {
     throw new Error('Failed to authenticate with M-Pesa');
   }
 
+  shouldRetryStkError(error) {
+    const statusCode = error.response?.status;
+    const apiErrorCode = String(error.response?.data?.errorCode || '');
+    const networkCodes = ['ECONNABORTED', 'ETIMEDOUT', 'ECONNRESET', 'EAI_AGAIN'];
+
+    // Permanent merchant/config errors should fail immediately.
+    if (apiErrorCode === '500.001.1001' || statusCode === 400 || statusCode === 401 || statusCode === 403) {
+      return false;
+    }
+
+    if (networkCodes.includes(error.code)) {
+      return true;
+    }
+
+    return !statusCode || statusCode >= 500;
+  }
+
+  async executeStkPush(accessToken, payload) {
+    return this.requestJson('POST', '/mpesa/stkpush/v1/processrequest', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: payload,
+      timeout: 20000,
+    });
+  }
+
   async initiateStkPush(phone, amount) {
     try {
       const normalizedPhone = this.normalizePhone(phone);
@@ -270,17 +297,29 @@ class MpesaService {
 
       console.log('[M-Pesa STK] Request payload:', payload);
 
-      const response = await this.requestJson(
-        'POST',
-        '/mpesa/stkpush/v1/processrequest',
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: payload,
-          timeout: 15000,
+      let response;
+      let lastError;
+
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        try {
+          response = await this.executeStkPush(accessToken, payload);
+          break;
+        } catch (error) {
+          lastError = error;
+          const canRetry = attempt < 2 && this.shouldRetryStkError(error);
+          console.error(`[M-Pesa STK] Attempt ${attempt} failed:`, error.message);
+
+          if (!canRetry) {
+            throw error;
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, 1200));
         }
-      );
+      }
+
+      if (!response && lastError) {
+        throw lastError;
+      }
 
       console.log('[M-Pesa STK] Response:', response);
 
