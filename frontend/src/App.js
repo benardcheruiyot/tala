@@ -8,7 +8,6 @@ import './styles/globals.css';
 import Home from './pages/Home';
 import Eligibility from './pages/Eligibility';
 import Loan from './pages/Loan';
-import Dashboard from './pages/Dashboard';
 import Processing from './pages/Processing';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -52,15 +51,6 @@ function App() {
             element={
               <ProtectedRoute>
                 <Loan />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
               </ProtectedRoute>
             }
           />

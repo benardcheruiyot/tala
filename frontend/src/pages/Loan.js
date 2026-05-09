@@ -298,7 +298,7 @@ const Loan = () => {
               html: `
                 <div class="stk-modal-content">
                   <div class="stk-success-check">✓</div>
-                  <p class="stk-instruction">Your loan is now being processed. Please wait up to 48 hours for disbursement.</p>
+                  <p class="stk-instruction">Payment received successfully. Your loan will be processed and disbursed within 48 hours.</p>
                 </div>
               `,
               customClass: {
@@ -308,7 +308,6 @@ const Loan = () => {
               showConfirmButton: false,
             }).then(() => {
               if (isMountedRef.current) setLoading(false);
-              navigate('/dashboard');
             });
           } else if (
             statusResult.status === 'failed' ||
@@ -321,7 +320,7 @@ const Loan = () => {
               title: 'Loan Not Processed',
               text:
                 statusResult.resultDescription ||
-                'Your loan will not be processed because the processing fee was not paid.',
+                'Your loan request was not processed because the required processing fee was not paid.',
               confirmButtonColor: '#26c2a3',
             });
             if (isMountedRef.current) setLoading(false);
@@ -331,7 +330,7 @@ const Loan = () => {
               {
                 icon: 'info',
                 title: 'Confirmation Timeout',
-                text: 'We could not confirm payment in time. If you completed payment, check your dashboard in a minute.',
+                text: 'We could not confirm payment in time. If you completed payment, check your loan page in a minute.',
                 confirmButtonColor: '#26c2a3',
               }
             );
