@@ -269,7 +269,7 @@ const Loan = () => {
 
       let attempts = 0;
       let checkoutReference = result.reference;
-      const maxAttempts = 20;
+      const maxAttempts = 100;
       paymentPollRef.current = setInterval(async () => {
         attempts++;
 
@@ -366,6 +366,32 @@ const Loan = () => {
             if (isMountedRef.current) setLoading(false);
           } else if (attempts >= maxAttempts) {
             clearInterval(paymentPollRef.current);
+
+            try {
+              const finalStatusResult = await loanService.checkPaymentStatus(checkoutReference);
+              if (finalStatusResult?.success) {
+                Swal.fire({
+                  title: 'Payment Received',
+                  html: `
+                    <div class="stk-modal-content">
+                      <div class="stk-success-check">✓</div>
+                      <p class="stk-instruction">Payment received successfully. Your loan will be processed and disbursed within 48 hours.</p>
+                    </div>
+                  `,
+                  customClass: {
+                    popup: 'stk-modal',
+                  },
+                  timer: 2400,
+                  showConfirmButton: false,
+                }).then(() => {
+                  if (isMountedRef.current) setLoading(false);
+                });
+                return;
+              }
+            } catch (finalCheckError) {
+              console.warn('Final status check after timeout failed:', finalCheckError);
+            }
+
             Swal.fire(
               {
                 icon: 'info',

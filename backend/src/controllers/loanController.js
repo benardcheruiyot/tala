@@ -263,6 +263,7 @@ class LoanController {
 
       const { CheckoutRequestID, MerchantRequestID, ResultCode, ResultDesc, CallbackMetadata } = Body.stkCallback;
       const metadata = CallbackMetadata?.Item || [];
+      const normalizedResultCode = String(ResultCode ?? '');
 
       console.log(`[Callback] Received callback for CheckoutRequestID: ${CheckoutRequestID}, ResultCode: ${ResultCode}`);
 
@@ -270,9 +271,9 @@ class LoanController {
       const receiptNumber = getMetaValue('MpesaReceiptNumber') || null;
 
       const normalizedStatus =
-        ResultCode === 0
+        normalizedResultCode === '0'
           ? 'completed'
-          : ResultCode === 1032
+          : normalizedResultCode === '1032'
             ? 'cancelled'
             : 'failed';
 
@@ -286,7 +287,7 @@ class LoanController {
           checkoutRequestId: CheckoutRequestID,
           merchantRequestId: MerchantRequestID || null,
           status: normalizedStatus,
-          resultCode: String(ResultCode),
+          resultCode: normalizedResultCode,
           resultDescription: ResultDesc || null,
           mpesaReceiptNumber: receiptNumber,
           callbackData: Body.stkCallback,
@@ -296,7 +297,7 @@ class LoanController {
         await MpesaTransaction.updateByCheckoutRequestId(CheckoutRequestID, {
           merchantRequestId: MerchantRequestID || null,
           status: normalizedStatus,
-          resultCode: String(ResultCode),
+          resultCode: normalizedResultCode,
           resultDescription: ResultDesc || null,
           mpesaReceiptNumber: receiptNumber,
           callbackData: Body.stkCallback,
@@ -304,7 +305,7 @@ class LoanController {
       }
 
       // ResultCode 0 = Success
-      if (ResultCode === 0) {
+      if (normalizedResultCode === '0') {
         await this.ensureLoanCreatedForCompletedTransaction(CheckoutRequestID);
         console.log(`✅ Payment successful for request: ${CheckoutRequestID}`);
       } else {

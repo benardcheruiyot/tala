@@ -410,9 +410,10 @@ class MpesaService {
 
       console.log('[M-Pesa Status] Response:', JSON.stringify(response));
 
-      const isSuccess = response.ResultCode === '0';
+      const normalizedResultCode = String(response.ResultCode || '');
+      const isSuccess = normalizedResultCode === '0';
       const isPending = ['1', '1037', '1019'].includes(String(response.ResultCode || ''));
-      const isCancelled = String(response.ResultCode || '') === '1032';
+      const isCancelled = normalizedResultCode === '1032';
       const mismatchDetected = !isSuccess && this.isAgentStoreMismatchDescription(response.ResultDesc);
 
       if (mismatchDetected) {
