@@ -269,7 +269,7 @@ const Loan = () => {
 
       let attempts = 0;
       let checkoutReference = result.reference;
-      const maxAttempts = 100;
+      const maxAttempts = 20;
       paymentPollRef.current = setInterval(async () => {
         attempts++;
 
