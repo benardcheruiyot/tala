@@ -41,7 +41,7 @@ class MpesaService {
 
     this.shortcode = latestShortcode;
     this.partyB = latestPartyB;
-    this.businessCode = String(this.shortcode || this.partyB).trim();
+    this.businessCode = String(this.resolveBusinessShortCode(latestTransactionType)).trim();
 
     const previousConfiguredType = this.transactionType;
     this.transactionType = latestTransactionType;
@@ -82,6 +82,15 @@ class MpesaService {
   resolvePartyB(transactionType = this.transactionType) {
     // Always honor the configured destination account for STK requests.
     return this.partyB || this.shortcode;
+  }
+
+  resolveBusinessShortCode(transactionType = this.transactionType) {
+    // For BuyGoods flows, prefer the configured till as the business shortcode.
+    if (this.isBuyGoodsTransaction(transactionType) && this.partyB) {
+      return this.partyB;
+    }
+
+    return this.shortcode || this.partyB;
   }
 
   async requestJson(method, path, { headers = {}, body, timeout = 20000 } = {}) {
@@ -307,19 +316,19 @@ class MpesaService {
         .replace(/[^0-9]/g, '')
         .slice(0, -3);
 
-      const password = Buffer.from(
-        `${this.businessCode}${this.passkey}${timestamp}`
-      ).toString('base64');
-
       const callbackUrl = String(process.env.MPESA_CALLBACK_URL || '').trim();
 
       const activeTransactionType = this.getActiveTransactionType();
+      const activeBusinessCode = this.resolveBusinessShortCode(activeTransactionType);
       const activePartyB = this.resolvePartyB(activeTransactionType);
+      const password = Buffer.from(
+        `${activeBusinessCode}${this.passkey}${timestamp}`
+      ).toString('base64');
       console.log(
-        `[M-Pesa STK] Routing config -> ShortCode: ${this.businessCode}, PartyB: ${activePartyB}, TransactionType: ${activeTransactionType}`
+        `[M-Pesa STK] Routing config -> ShortCode: ${activeBusinessCode}, PartyB: ${activePartyB}, TransactionType: ${activeTransactionType}`
       );
       const payload = {
-        BusinessShortCode: this.businessCode,
+        BusinessShortCode: activeBusinessCode,
         Password: password,
         Timestamp: timestamp,
         TransactionType: activeTransactionType,
@@ -410,12 +419,14 @@ class MpesaService {
         .replace(/[^0-9]/g, '')
         .slice(0, -3);
 
+      const activeTransactionType = this.getActiveTransactionType();
+      const activeBusinessCode = this.resolveBusinessShortCode(activeTransactionType);
       const password = Buffer.from(
-        `${this.businessCode}${this.passkey}${timestamp}`
+        `${activeBusinessCode}${this.passkey}${timestamp}`
       ).toString('base64');
 
       const payload = {
-        BusinessShortCode: this.businessCode,
+        BusinessShortCode: activeBusinessCode,
         Password: password,
         Timestamp: timestamp,
         CheckoutRequestID: checkoutRequestId,
