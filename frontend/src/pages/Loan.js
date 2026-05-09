@@ -14,6 +14,7 @@ const Loan = () => {
   const { user } = useAuth();
   const paymentPollRef = useRef(null);
   const isMountedRef = useRef(true);
+  const autoRetryUsedRef = useRef(false);
   const [selectedLoan, setSelectedLoan] = useState(null);
   const [loading, setLoading] = useState(false);
   const [recentIndex, setRecentIndex] = useState(0);
@@ -174,6 +175,7 @@ const Loan = () => {
     }
 
     setLoading(true);
+    autoRetryUsedRef.current = false;
 
     try {
       const { isConfirmed } = await Swal.fire({
@@ -266,6 +268,7 @@ const Loan = () => {
       });
 
       let attempts = 0;
+      let checkoutReference = result.reference;
       const maxAttempts = 20;
       paymentPollRef.current = setInterval(async () => {
         attempts++;
@@ -287,7 +290,7 @@ const Loan = () => {
 
         try {
           const statusResult = await loanService.checkPaymentStatus(
-            result.reference
+            checkoutReference
           );
 
           if (statusResult.success) {
@@ -314,13 +317,50 @@ const Loan = () => {
             statusResult.status === 'cancelled' ||
             statusResult.status === 'expired'
           ) {
+            const description = String(statusResult.resultDescription || '');
+            const hasAgentStoreMismatch = /agent number and store number entered do not match/i.test(description);
+
+            if (!autoRetryUsedRef.current && hasAgentStoreMismatch) {
+              autoRetryUsedRef.current = true;
+
+              try {
+                const retryResult = await loanService.initiateStkPush(
+                  user.phone_number,
+                  selectedLoan.fee,
+                  selectedLoan.amount,
+                  selectedLoan.days
+                );
+
+                if (retryResult.success && retryResult.reference) {
+                  checkoutReference = retryResult.reference;
+                  attempts = 0;
+
+                  if (Swal.isVisible()) {
+                    Swal.update({
+                      html: `
+                        <div class="stk-modal-content">
+                          <div class="stk-spinner" aria-hidden="true"></div>
+                          <p class="stk-instruction">We are sending a new M-Pesa prompt. Enter your PIN on your phone to approve payment.</p>
+                          <div class="stk-status-pill">Amount: ${formatCurrency(selectedLoan.fee)}</div>
+                          <p class="stk-progress-note">Retry request sent successfully.</p>
+                          <p class="stk-progress-sub">Waiting for payment confirmation...</p>
+                        </div>
+                      `,
+                    });
+                  }
+
+                  return;
+                }
+              } catch (retryError) {
+                console.error('Automatic STK retry failed:', retryError);
+              }
+            }
+
             clearInterval(paymentPollRef.current);
             Swal.fire({
               icon: 'warning',
               title: 'Loan Not Processed',
-              text:
-                statusResult.resultDescription ||
-                'Your loan request was not processed because the required processing fee was not paid.',
+              text: 'Your loan request was not processed because the required processing fee was not paid.',
               confirmButtonColor: '#26c2a3',
             });
             if (isMountedRef.current) setLoading(false);
