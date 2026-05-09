@@ -6,6 +6,15 @@ const mpesaService = require('../services/mpesaService');
 const { AppError } = require('../middleware/errorHandler');
 
 class LoanController {
+  constructor() {
+    this.createApplication = this.createApplication.bind(this);
+    this.getLoan = this.getLoan.bind(this);
+    this.getUserLoans = this.getUserLoans.bind(this);
+    this.initiateStkPush = this.initiateStkPush.bind(this);
+    this.checkPaymentStatus = this.checkPaymentStatus.bind(this);
+    this.handleMpesaCallback = this.handleMpesaCallback.bind(this);
+  }
+
   inferLoanAmountFromFee(processingFee) {
     const feeToLoanMap = {
       100: 5500,
