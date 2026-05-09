@@ -23,6 +23,11 @@ class MpesaService {
       console.warn('[M-Pesa] Set real credentials in .env to enable production');
     } else {
       console.log(`[M-Pesa] ✅ M-Pesa is configured for ${this.environment}`);
+      if (this.isBuyGoodsTransaction() && this.partyB && this.partyB !== this.businessCode) {
+        console.warn(
+          `[M-Pesa] MPESA_PARTYB (${this.partyB}) differs from MPESA_SHORTCODE (${this.businessCode}). Using shortcode as PartyB for CustomerBuyGoodsOnline.`
+        );
+      }
     }
   }
 
@@ -35,7 +40,16 @@ class MpesaService {
     return hasKeys && hasBusinessCode && hasPartyB && hasPasskey && this.environment === 'production';
   }
 
+  isBuyGoodsTransaction() {
+    return this.transactionType.toLowerCase() === 'customerbuygoodsonline';
+  }
+
   resolvePartyB() {
+    // For Buy Goods STK push, PartyB should match BusinessShortCode.
+    if (this.isBuyGoodsTransaction()) {
+      return this.businessCode;
+    }
+
     return this.partyB || this.shortcode;
   }
 
