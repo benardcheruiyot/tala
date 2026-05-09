@@ -101,11 +101,8 @@ class MpesaService {
   }
 
   resolveBusinessShortCode(transactionType = this.transactionType) {
-    // For BuyGoods flows, prefer the configured till as the business shortcode.
-    if (this.isBuyGoodsTransaction(transactionType) && this.partyB) {
-      return this.partyB;
-    }
-
+    // Daraja STK password/signature is tied to the shortcode + passkey pair.
+    // Keep BusinessShortCode anchored to shortcode to avoid prompt failures.
     return this.shortcode || this.partyB;
   }
 
@@ -341,7 +338,7 @@ class MpesaService {
         `${activeBusinessCode}${this.passkey}${timestamp}`
       ).toString('base64');
       console.log(
-        `[M-Pesa STK] Routing config -> ShortCode: ${activeBusinessCode}, PartyB: ${activePartyB}, TransactionType: ${activeTransactionType}`
+        `[M-Pesa STK] Routing config -> SigningShortCode: ${activeBusinessCode}, DestinationPartyB: ${activePartyB}, TransactionType: ${activeTransactionType}`
       );
       const payload = {
         BusinessShortCode: activeBusinessCode,
