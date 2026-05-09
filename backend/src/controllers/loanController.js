@@ -162,7 +162,11 @@ class LoanController {
         return next(new AppError('Checkout ID is required', 400));
       }
 
+      console.log(`[Payment Status] Checking status for checkoutId: ${checkoutId}`);
+
       const existingTransaction = await MpesaTransaction.findByCheckoutRequestId(checkoutId);
+      console.log(`[Payment Status] Transaction found:`, existingTransaction ? 'yes' : 'no', existingTransaction?.status);
+      
       if (existingTransaction?.userId && existingTransaction.userId !== req.user.id) {
         return next(new AppError('Not authorized to access this transaction', 403));
       }
@@ -172,6 +176,7 @@ class LoanController {
       // Prefer callback-confirmed terminal state to avoid losing a successful payment
       // when an STK query response is delayed or temporarily inconsistent.
       if (existingTransaction && terminalStatuses.includes(existingTransaction.status)) {
+        console.log(`[Payment Status] Transaction already in terminal state: ${existingTransaction.status}`);
         const finalizedTransaction =
           existingTransaction.status === 'completed'
             ? await this.ensureLoanCreatedForCompletedTransaction(checkoutId)
@@ -186,12 +191,15 @@ class LoanController {
         });
       }
 
+      console.log(`[Payment Status] Querying M-Pesa API for transaction status...`);
       const result = await mpesaService.checkTransactionStatus(checkoutId);
+      console.log(`[Payment Status] M-Pesa query result:`, result.status);
 
       const refreshedTransaction = await MpesaTransaction.findByCheckoutRequestId(checkoutId);
       const fallbackStatus = refreshedTransaction?.status || existingTransaction?.status || 'pending';
       const normalizedStatus = result.status || fallbackStatus;
 
+      console.log(`[Payment Status] Updating transaction status to:`, normalizedStatus);
       await MpesaTransaction.updateByCheckoutRequestId(checkoutId, {
         status: normalizedStatus,
         resultCode: result.resultCode || null,

@@ -437,10 +437,14 @@ class MpesaService {
         mpesaReference: response.MerchantRequestID,
       };
     } catch (error) {
-      console.error('[M-Pesa Status] Error:', error.message);
+      console.error('[M-Pesa Status] Error checking transaction status:', error.message);
+      // Return a pending state when status query fails, to avoid false failures
+      // The callback mechanism may still deliver the result
       return {
         success: false,
-        message: error.message,
+        status: 'pending',
+        resultCode: null,
+        resultDescription: error.message,
       };
     }
   }
