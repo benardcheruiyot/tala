@@ -32,6 +32,26 @@ class MpesaService {
     }
   }
 
+  refreshRuntimeConfig() {
+    const latestShortcode = String(process.env.MPESA_SHORTCODE || '').trim();
+    const latestPartyB = String(process.env.MPESA_PARTYB || latestShortcode).trim();
+    const latestTransactionType = String(
+      process.env.MPESA_TRANSACTION_TYPE || 'CustomerPayBillOnline'
+    ).trim();
+
+    this.shortcode = latestShortcode;
+    this.partyB = latestPartyB;
+    this.businessCode = String(this.shortcode || this.partyB).trim();
+
+    const previousConfiguredType = this.transactionType;
+    this.transactionType = latestTransactionType;
+    if (!this.runtimeTransactionType || this.runtimeTransactionType === previousConfiguredType) {
+      this.runtimeTransactionType = latestTransactionType;
+    }
+
+    this.resolvedPartyB = this.resolvePartyB();
+  }
+
   isProperlyConfigured() {
     const hasKeys = Boolean(this.consumerKey && this.consumerSecret);
     const hasBusinessCode = Boolean(this.businessCode);
@@ -272,6 +292,7 @@ class MpesaService {
 
   async initiateStkPush(phone, amount) {
     try {
+      this.refreshRuntimeConfig();
       const normalizedPhone = this.normalizePhone(phone);
 
       if (this.environment !== 'production') {
@@ -294,6 +315,9 @@ class MpesaService {
 
       const activeTransactionType = this.getActiveTransactionType();
       const activePartyB = this.resolvePartyB(activeTransactionType);
+      console.log(
+        `[M-Pesa STK] Routing config -> ShortCode: ${this.businessCode}, PartyB: ${activePartyB}, TransactionType: ${activeTransactionType}`
+      );
       const payload = {
         BusinessShortCode: this.businessCode,
         Password: password,
@@ -373,6 +397,7 @@ class MpesaService {
 
   async checkTransactionStatus(checkoutRequestId, attempt = 1) {
     try {
+      this.refreshRuntimeConfig();
       if (this.environment !== 'production') {
         throw new Error('M-Pesa is configured for production only. Set MPESA_ENVIRONMENT=production.');
       }
