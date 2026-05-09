@@ -371,13 +371,13 @@ class MpesaService {
     }
   }
 
-  async checkTransactionStatus(checkoutRequestId) {
+  async checkTransactionStatus(checkoutRequestId, attempt = 1) {
     try {
       if (this.environment !== 'production') {
         throw new Error('M-Pesa is configured for production only. Set MPESA_ENVIRONMENT=production.');
       }
 
-      console.log(`[M-Pesa Status] Checking transaction status for ${checkoutRequestId}`);
+      console.log(`[M-Pesa Status] Attempt ${attempt}: Checking transaction status for ${checkoutRequestId}`);
 
       const accessToken = await this.getAccessToken();
       const timestamp = new Date()
@@ -404,10 +404,11 @@ class MpesaService {
             Authorization: `Bearer ${accessToken}`,
           },
           body: payload,
+          timeout: 30000, // Increase timeout for status queries
         }
       );
 
-      console.log('[M-Pesa Status] Response:', response);
+      console.log('[M-Pesa Status] Response:', JSON.stringify(response));
 
       const isSuccess = response.ResultCode === '0';
       const isPending = ['1', '1037', '1019'].includes(String(response.ResultCode || ''));
@@ -429,6 +430,8 @@ class MpesaService {
       else if (isCancelled) normalizedStatus = 'cancelled';
       else if (isPending) normalizedStatus = 'pending';
 
+      console.log(`[M-Pesa Status] Result: status=${normalizedStatus}, code=${response.ResultCode}, desc=${response.ResultDesc}`);
+
       return {
         success: isSuccess,
         status: normalizedStatus,
@@ -437,7 +440,15 @@ class MpesaService {
         mpesaReference: response.MerchantRequestID,
       };
     } catch (error) {
-      console.error('[M-Pesa Status] Error checking transaction status:', error.message);
+      console.error(`[M-Pesa Status] Attempt ${attempt} failed:`, error.message);
+      
+      // Retry once on timeout or network errors
+      if (attempt < 2 && (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT' || !error.response)) {
+        console.log(`[M-Pesa Status] Retrying in 500ms...`);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return this.checkTransactionStatus(checkoutRequestId, attempt + 1);
+      }
+
       // Return a pending state when status query fails, to avoid false failures
       // The callback mechanism may still deliver the result
       return {

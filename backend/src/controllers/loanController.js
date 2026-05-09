@@ -199,18 +199,34 @@ class LoanController {
       const fallbackStatus = refreshedTransaction?.status || existingTransaction?.status || 'pending';
       const normalizedStatus = result.status || fallbackStatus;
 
-      console.log(`[Payment Status] Updating transaction status to:`, normalizedStatus);
-      await MpesaTransaction.updateByCheckoutRequestId(checkoutId, {
-        status: normalizedStatus,
-        resultCode: result.resultCode || null,
-        resultDescription: result.resultDescription || null,
-      });
+      console.log(`[Check Status] Normalized status: ${normalizedStatus}`);
+      
+      // Update the transaction with the latest status
+      if (existingTransaction || refreshedTransaction) {
+        console.log(`[Check Status] Updating transaction status...`);
+        await MpesaTransaction.updateByCheckoutRequestId(checkoutId, {
+          status: normalizedStatus,
+          resultCode: result.resultCode || null,
+          resultDescription: result.resultDescription || null,
+        });
+      } else if (normalizedStatus === 'completed') {
+        // If we confirmed payment is completed but no transaction exists, create one
+        console.log(`[Check Status] Payment confirmed but no transaction exists. Creating new record.`);
+        await MpesaTransaction.create({
+          checkoutRequestId: checkoutId,
+          status: 'completed',
+          resultCode: result.resultCode || '0',
+          resultDescription: result.resultDescription || 'Payment confirmed',
+        });
+      }
 
       const finalizedTransaction =
         normalizedStatus === 'completed'
           ? await this.ensureLoanCreatedForCompletedTransaction(checkoutId)
           : await MpesaTransaction.findByCheckoutRequestId(checkoutId);
 
+      console.log(`[Check Status] Final response: success=${normalizedStatus === 'completed'}, status=${normalizedStatus}`);
+      
       res.status(200).json({
         success: normalizedStatus === 'completed',
         status: normalizedStatus,
@@ -222,6 +238,7 @@ class LoanController {
         loanId: finalizedTransaction?.loanId || null,
       });
     } catch (error) {
+      console.error('[Check Status] Error:', error.message, error.stack);
       next(new AppError(error.message, 500));
     }
   }
@@ -231,6 +248,7 @@ class LoanController {
       const { Body } = req.body;
 
       if (!Body || !Body.stkCallback) {
+        console.error('[Callback] Invalid callback data received');
         return res.status(400).json({
           success: false,
           message: 'Invalid callback data',
@@ -239,6 +257,8 @@ class LoanController {
 
       const { CheckoutRequestID, MerchantRequestID, ResultCode, ResultDesc, CallbackMetadata } = Body.stkCallback;
       const metadata = CallbackMetadata?.Item || [];
+
+      console.log(`[Callback] Received callback for CheckoutRequestID: ${CheckoutRequestID}, ResultCode: ${ResultCode}`);
 
       const getMetaValue = (name) => metadata.find((item) => item.Name === name)?.Value;
       const receiptNumber = getMetaValue('MpesaReceiptNumber') || null;
@@ -250,26 +270,44 @@ class LoanController {
             ? 'cancelled'
             : 'failed';
 
-      await MpesaTransaction.updateByCheckoutRequestId(CheckoutRequestID, {
-        merchantRequestId: MerchantRequestID || null,
-        status: normalizedStatus,
-        resultCode: String(ResultCode),
-        resultDescription: ResultDesc || null,
-        mpesaReceiptNumber: receiptNumber,
-        callbackData: Body.stkCallback,
-      });
+      // Check if transaction exists
+      let existingTransaction = await MpesaTransaction.findByCheckoutRequestId(CheckoutRequestID);
+      
+      if (!existingTransaction) {
+        console.warn(`[Callback] Transaction not found in memory for ${CheckoutRequestID}. Creating new record.`);
+        // If transaction doesn't exist in memory, create it from callback data
+        existingTransaction = await MpesaTransaction.create({
+          checkoutRequestId: CheckoutRequestID,
+          merchantRequestId: MerchantRequestID || null,
+          status: normalizedStatus,
+          resultCode: String(ResultCode),
+          resultDescription: ResultDesc || null,
+          mpesaReceiptNumber: receiptNumber,
+          callbackData: Body.stkCallback,
+        });
+      } else {
+        // Update existing transaction
+        await MpesaTransaction.updateByCheckoutRequestId(CheckoutRequestID, {
+          merchantRequestId: MerchantRequestID || null,
+          status: normalizedStatus,
+          resultCode: String(ResultCode),
+          resultDescription: ResultDesc || null,
+          mpesaReceiptNumber: receiptNumber,
+          callbackData: Body.stkCallback,
+        });
+      }
 
       // ResultCode 0 = Success
       if (ResultCode === 0) {
         await this.ensureLoanCreatedForCompletedTransaction(CheckoutRequestID);
         console.log(`✅ Payment successful for request: ${CheckoutRequestID}`);
-        // Store callback data, approve loan, etc.
       } else {
-        console.log(`❌ Payment failed for request: ${CheckoutRequestID}`);
+        console.log(`❌ Payment failed for request: ${CheckoutRequestID}, Result: ${ResultDesc}`);
       }
 
       res.status(200).json({ success: true });
     } catch (error) {
+      console.error('[Callback] Error processing callback:', error.message);
       next(new AppError(error.message, 500));
     }
   }
