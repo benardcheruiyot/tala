@@ -11,6 +11,7 @@ class MpesaService {
     this.businessCode = String(this.shortcode || this.partyB).trim();
     this.passkey = String(process.env.MPESA_PASSKEY || '').trim();
     this.transactionType = String(process.env.MPESA_TRANSACTION_TYPE || 'CustomerPayBillOnline').trim();
+    this.runtimeTransactionType = this.transactionType;
     this.httpsAgent = new https.Agent({ family: 4, keepAlive: false });
     this.cachedAccessToken = null;
     this.cachedAccessTokenExpiresAt = 0;
@@ -23,7 +24,7 @@ class MpesaService {
       console.warn('[M-Pesa] Set real credentials in .env to enable production');
     } else {
       console.log(`[M-Pesa] ✅ M-Pesa is configured for ${this.environment}`);
-      if (this.isBuyGoodsTransaction() && this.partyB && this.partyB !== this.businessCode) {
+      if (this.isBuyGoodsTransaction(this.transactionType) && this.partyB && this.partyB !== this.businessCode) {
         console.warn(
           `[M-Pesa] MPESA_PARTYB (${this.partyB}) differs from MPESA_SHORTCODE (${this.businessCode}). Using shortcode as PartyB for CustomerBuyGoodsOnline.`
         );
@@ -40,13 +41,27 @@ class MpesaService {
     return hasKeys && hasBusinessCode && hasPartyB && hasPasskey && this.environment === 'production';
   }
 
-  isBuyGoodsTransaction() {
-    return this.transactionType.toLowerCase() === 'customerbuygoodsonline';
+  isBuyGoodsTransaction(transactionType = this.transactionType) {
+    return String(transactionType || '').toLowerCase() === 'customerbuygoodsonline';
   }
 
-  resolvePartyB() {
+  getAlternateTransactionType(transactionType = this.transactionType) {
+    return this.isBuyGoodsTransaction(transactionType)
+      ? 'CustomerPayBillOnline'
+      : 'CustomerBuyGoodsOnline';
+  }
+
+  getActiveTransactionType() {
+    return this.runtimeTransactionType || this.transactionType;
+  }
+
+  isAgentStoreMismatchDescription(text) {
+    return /agent number and store number entered do not match/i.test(String(text || ''));
+  }
+
+  resolvePartyB(transactionType = this.transactionType) {
     // For Buy Goods STK push, PartyB should match BusinessShortCode.
-    if (this.isBuyGoodsTransaction()) {
+    if (this.isBuyGoodsTransaction(transactionType)) {
       return this.businessCode;
     }
 
@@ -281,14 +296,16 @@ class MpesaService {
 
       const callbackUrl = String(process.env.MPESA_CALLBACK_URL || '').trim();
 
+      const activeTransactionType = this.getActiveTransactionType();
+      const activePartyB = this.resolvePartyB(activeTransactionType);
       const payload = {
         BusinessShortCode: this.businessCode,
         Password: password,
         Timestamp: timestamp,
-        TransactionType: this.transactionType,
+        TransactionType: activeTransactionType,
         Amount: amount,
         PartyA: normalizedPhone,
-        PartyB: this.resolvedPartyB,
+        PartyB: activePartyB,
         PhoneNumber: normalizedPhone,
         CallBackURL: callbackUrl,
         AccountReference: `LoanApp-${Date.now()}`,
@@ -399,6 +416,17 @@ class MpesaService {
       const isSuccess = response.ResultCode === '0';
       const isPending = ['1', '1037', '1019'].includes(String(response.ResultCode || ''));
       const isCancelled = String(response.ResultCode || '') === '1032';
+      const mismatchDetected = !isSuccess && this.isAgentStoreMismatchDescription(response.ResultDesc);
+
+      if (mismatchDetected) {
+        const nextTransactionType = this.getAlternateTransactionType(this.getActiveTransactionType());
+        if (nextTransactionType !== this.runtimeTransactionType) {
+          this.runtimeTransactionType = nextTransactionType;
+          console.warn(
+            `[M-Pesa] Detected Agent/Store mismatch. Switching runtime transaction type to ${this.runtimeTransactionType} for subsequent STK attempts.`
+          );
+        }
+      }
 
       let normalizedStatus = 'failed';
       if (isSuccess) normalizedStatus = 'completed';
