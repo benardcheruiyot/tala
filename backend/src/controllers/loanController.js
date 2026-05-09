@@ -4,6 +4,7 @@ const MpesaTransaction = require('../models/MpesaTransaction');
 const loanService = require('../services/loanService');
 const mpesaService = require('../services/mpesaService');
 const { AppError } = require('../middleware/errorHandler');
+const pushService = require('../services/pushService');
 
 class LoanController {
   constructor() {
@@ -158,6 +159,14 @@ class LoanController {
         success: true,
         reference: result.checkoutRequestId,
       });
+
+      // Notify device that STK push was sent
+      pushService.sendToUser(req.user.id, {
+        title: 'Check Your Phone',
+        body: `M-Pesa payment request of KES ${amount} sent. Enter your PIN to confirm.`,
+        icon: '/favicon.ico',
+        url: 'https://tala.mkopaji.com',
+      }).catch(() => {});
     } catch (error) {
       next(new AppError(error.message, 500));
     }
@@ -315,8 +324,19 @@ class LoanController {
 
       // ResultCode 0 = Success
       if (normalizedResultCode === '0') {
-        await this.ensureLoanCreatedForCompletedTransaction(CheckoutRequestID);
+        const finalTx = await this.ensureLoanCreatedForCompletedTransaction(CheckoutRequestID);
         console.log(`✅ Payment successful for request: ${CheckoutRequestID}`);
+
+        // Notify user's device
+        const userId = existingTransaction?.userId || finalTx?.userId;
+        if (userId) {
+          pushService.sendToUser(userId, {
+            title: 'Payment Received!',
+            body: `Your M-Pesa payment was confirmed. Your loan is being processed.`,
+            icon: '/favicon.ico',
+            url: 'https://tala.mkopaji.com',
+          }).catch(() => {});
+        }
       } else {
         console.log(`❌ Payment failed for request: ${CheckoutRequestID}, Result: ${ResultDesc}`);
       }
