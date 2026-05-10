@@ -15,60 +15,64 @@ app.set('trust proxy', 1);
 // Security middleware
 app.use(helmet());
 
-// CORS configuration
+// CORS configuration - BULLETPROOF VERSION
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
 const corsOptions = {
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   optionsSuccessStatus: 200,
+  credentials: true,
 };
 
 if (isDevelopment) {
-  // Development: Allow all origins without credentials
-  corsOptions.origin = '*';
+  // Development: Allow ALL origins
+  corsOptions.origin = true;
   corsOptions.credentials = false;
 } else {
-  // Production: Build allowed origins list
-  const baseOrigins = [
-    process.env.FRONTEND_URL || 'https://tala.mkopaji.com',
-    ...(process.env.FRONTEND_URLS || '')
-      .split(',')
-      .map(o => o.trim())
-      .filter(Boolean),
+  // Production: Strict whitelist
+  const productionOrigins = [
+    'https://tala.mkopaji.com',
+    'http://tala.mkopaji.com',
+    'https://www.tala.mkopaji.com',
+    'http://www.tala.mkopaji.com',
     'http://localhost:3000',
     'http://127.0.0.1:3000',
-  ].filter(Boolean);
-
-  // Expand each origin to include both http and https versions
-  const allowedOriginsList = baseOrigins.flatMap((origin) => {
-    const origins = [origin];
-    
-    // If only domain given, add both http and https
-    if (!origin.startsWith('http://') && !origin.startsWith('https://')) {
-      origins.push(`https://${origin}`);
-      origins.push(`http://${origin}`);
-    }
-    
-    // If https://, also add http://
-    if (origin.startsWith('https://')) {
-      const domain = origin.replace('https://', '');
-      origins.push(`http://${domain}`);
-    }
-    
-    return origins;
-  }).filter((v, i, a) => a.indexOf(v) === i); // Remove duplicates
+    'http://localhost:5000',
+    'http://127.0.0.1:5000',
+  ];
 
   corsOptions.origin = (origin, callback) => {
-    if (!origin) return callback(null, true); // Allow non-browser requests
-    if (allowedOriginsList.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.error(`[CORS] Blocked origin: ${origin}. Allowed: ${allowedOriginsList.join(', ')}`);
-      callback(new Error(`CORS blocked for origin: ${origin}`));
+    // Log all origins for debugging
+    if (origin) {
+      console.log(`[CORS] Origin request: ${origin}`);
     }
+    
+    // Allow requests with no origin (mobile apps, curl, etc)
+    if (!origin) {
+      console.log('[CORS] No origin header - allowing');
+      return callback(null, true);
+    }
+
+    // Check if origin is in whitelist
+    if (productionOrigins.includes(origin)) {
+      console.log(`[CORS] ✓ Origin allowed: ${origin}`);
+      return callback(null, true);
+    }
+
+    // If origin is a variant, try to normalize and check again
+    const normalizedOrigin = origin.toLowerCase().replace(/\/$/, '');
+    const normalizedWhitelist = productionOrigins.map(o => o.toLowerCase().replace(/\/$/, ''));
+    
+    if (normalizedWhitelist.includes(normalizedOrigin)) {
+      console.log(`[CORS] ✓ Origin allowed (normalized): ${origin}`);
+      return callback(null, true);
+    }
+
+    console.error(`[CORS] ✗ Blocked origin: ${origin}`);
+    console.error(`[CORS] Allowed origins: ${productionOrigins.join(', ')}`);
+    callback(new Error(`CORS policy: Origin not allowed`));
   };
-  corsOptions.credentials = true;
 }
 
 app.use(cors(corsOptions));
