@@ -16,49 +16,54 @@ app.set('trust proxy', 1);
 app.use(helmet());
 
 // CORS configuration
-const configuredOrigins = [
-  process.env.FRONTEND_URL,
-  ...(process.env.FRONTEND_URLS || '')
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean),
-]
-  .filter(Boolean)
-  .flatMap((origin) => {
-    try {
-      const url = new URL(origin);
-      const host = url.host;
-      return [`https://${host}`, `http://${host}`];
-    } catch {
-      return [origin];
-    }
-  });
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
-const allowedOrigins = [
-  ...configuredOrigins,
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-];
-
-const isAllowedOrigin = (origin) => {
-  if (!origin) return true;
-  if (allowedOrigins.includes(origin)) return true;
-  return false;
+const corsOptions = {
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200,
 };
 
-app.use(
-  cors({
-    credentials: true,
-    origin: (origin, callback) => {
-      if (isAllowedOrigin(origin)) {
-        callback(null, true);
-        return;
+if (isDevelopment) {
+  // Development: Allow all origins
+  corsOptions.origin = '*';
+} else {
+  // Production: Restrict to configured origins
+  const configuredOrigins = [
+    process.env.FRONTEND_URL,
+    ...(process.env.FRONTEND_URLS || '')
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+  ]
+    .filter(Boolean)
+    .flatMap((origin) => {
+      try {
+        const url = new URL(origin);
+        const host = url.host;
+        return [`https://${host}`, `http://${host}`];
+      } catch {
+        return [origin];
       }
+    });
+
+  const allowedOrigins = [
+    ...configuredOrigins,
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+  ];
+
+  corsOptions.origin = (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
       callback(new Error(`CORS blocked for origin: ${origin}`));
-    },
-    optionsSuccessStatus: 200,
-  })
-);
+    }
+  };
+}
+
+app.use(cors(corsOptions));
 
 // Request logging
 app.use(morgan('combined'));
