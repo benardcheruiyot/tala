@@ -15,31 +15,21 @@ app.set('trust proxy', 1);
 // Security middleware
 app.use(helmet());
 
-// CORS configuration - BEST PRACTICE
-// Security comes from JWT authentication, not CORS restrictions
-const isDevelopment = process.env.NODE_ENV !== 'production';
-
-const corsOptions = {
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['*'],
-  exposedHeaders: ['Content-Type'],
-  optionsSuccessStatus: 200,
-};
-
-if (isDevelopment) {
-  // Development: Allow all origins without credentials
-  corsOptions.origin = '*';
-  corsOptions.credentials = false;
-} else {
-  // Production: Allow all origins (security via JWT authentication)
-  corsOptions.origin = function(origin, callback) {
-    // Always allow - JWT middleware protects the actual endpoints
-    callback(null, true);
-  };
-  corsOptions.credentials = false;
-}
-
-app.use(cors(corsOptions));
+// MANUAL CORS - Bypass npm cors library to ensure it NEVER fails
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', req.get('origin') || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header('Access-Control-Allow-Headers', '*');
+  res.header('Access-Control-Expose-Headers', '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  
+  next();
+});
 
 // Request logging
 app.use(morgan('combined'));
