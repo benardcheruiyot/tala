@@ -19,7 +19,7 @@ jobs:
           NODE_ENV=production
           PORT=5000
           FRONTEND_URL=https://tala.mkopaji.com
-          FRONTEND_URLS=
+          FRONTEND_URLS=http://localhost:3000,http://127.0.0.1:3000
           MONGODB_URI=
           JWT_SECRET=${{ secrets.PROD_JWT_SECRET }}
           JWT_EXPIRE=7d
@@ -50,6 +50,7 @@ jobs:
           source: "frontend/,backend/"
           target: "/var/www/tala.mkopaji.com"
           strip_components: 0
+          overwrite: true
 
       - name: Restart backend and configure Nginx
         uses: appleboy/ssh-action@v1.0.3
@@ -66,9 +67,8 @@ jobs:
 
             # Setup production environment
             cd "$BACKEND_DIR"
-            if [ ! -f .env ]; then
-              cp .env.production .env
-            fi
+            cp .env.production .env
+            echo "Production environment configured"
             
             npm install --omit=dev
 

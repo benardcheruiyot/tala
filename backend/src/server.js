@@ -29,35 +29,42 @@ if (isDevelopment) {
   corsOptions.origin = '*';
   corsOptions.credentials = false;
 } else {
-  // Production: Restrict to configured origins with credentials
-  const configuredOrigins = [
-    process.env.FRONTEND_URL,
+  // Production: Build allowed origins list
+  const baseOrigins = [
+    process.env.FRONTEND_URL || 'https://tala.mkopaji.com',
     ...(process.env.FRONTEND_URLS || '')
       .split(',')
-      .map((origin) => origin.trim())
+      .map(o => o.trim())
       .filter(Boolean),
-  ]
-    .filter(Boolean)
-    .flatMap((origin) => {
-      try {
-        const url = new URL(origin);
-        const host = url.host;
-        return [`https://${host}`, `http://${host}`];
-      } catch {
-        return [origin];
-      }
-    });
-
-  const allowedOrigins = [
-    ...configuredOrigins,
     'http://localhost:3000',
     'http://127.0.0.1:3000',
-  ];
+  ].filter(Boolean);
+
+  // Expand each origin to include both http and https versions
+  const allowedOriginsList = baseOrigins.flatMap((origin) => {
+    const origins = [origin];
+    
+    // If only domain given, add both http and https
+    if (!origin.startsWith('http://') && !origin.startsWith('https://')) {
+      origins.push(`https://${origin}`);
+      origins.push(`http://${origin}`);
+    }
+    
+    // If https://, also add http://
+    if (origin.startsWith('https://')) {
+      const domain = origin.replace('https://', '');
+      origins.push(`http://${domain}`);
+    }
+    
+    return origins;
+  }).filter((v, i, a) => a.indexOf(v) === i); // Remove duplicates
 
   corsOptions.origin = (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin) return callback(null, true); // Allow non-browser requests
+    if (allowedOriginsList.includes(origin)) {
       callback(null, true);
     } else {
+      console.error(`[CORS] Blocked origin: ${origin}. Allowed: ${allowedOriginsList.join(', ')}`);
       callback(new Error(`CORS blocked for origin: ${origin}`));
     }
   };
