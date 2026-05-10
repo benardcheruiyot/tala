@@ -19,17 +19,17 @@ app.use(helmet());
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
 const corsOptions = {
-  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   optionsSuccessStatus: 200,
 };
 
 if (isDevelopment) {
-  // Development: Allow all origins
+  // Development: Allow all origins without credentials
   corsOptions.origin = '*';
+  corsOptions.credentials = false;
 } else {
-  // Production: Restrict to configured origins
+  // Production: Restrict to configured origins with credentials
   const configuredOrigins = [
     process.env.FRONTEND_URL,
     ...(process.env.FRONTEND_URLS || '')
@@ -61,6 +61,7 @@ if (isDevelopment) {
       callback(new Error(`CORS blocked for origin: ${origin}`));
     }
   };
+  corsOptions.credentials = true;
 }
 
 app.use(cors(corsOptions));
