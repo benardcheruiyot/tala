@@ -44,6 +44,7 @@ jobs:
             npm install
             npm run build
 
+            cd "$BACKEND_DIR"
             if pm2 list | grep -q "tala-backend"; then
               pm2 reload tala-backend --update-env
             else
