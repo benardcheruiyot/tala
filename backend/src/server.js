@@ -40,7 +40,32 @@ app.use(express.urlencoded({ limit: '10kb', extended: true }));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+  res.status(200).json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    origin: req.get('origin'),
+    corsHeaders: {
+      'Access-Control-Allow-Origin': res.getHeader('Access-Control-Allow-Origin'),
+      'Access-Control-Allow-Methods': res.getHeader('Access-Control-Allow-Methods'),
+    }
+  });
+});
+
+// Diagnostic endpoint for debugging CORS issues
+app.get('/api/cors-check', (req, res) => {
+  res.status(200).json({
+    message: 'CORS is working correctly',
+    requestOrigin: req.get('origin') || 'none',
+    method: req.method,
+    timestamp: new Date().toISOString(),
+    yourCorsHeaders: {
+      origin: res.getHeader('Access-Control-Allow-Origin'),
+      methods: res.getHeader('Access-Control-Allow-Methods'),
+      headers: res.getHeader('Access-Control-Allow-Headers'),
+      credentials: res.getHeader('Access-Control-Allow-Credentials'),
+    },
+  });
 });
 
 // Routes
