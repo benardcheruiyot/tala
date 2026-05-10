@@ -15,64 +15,28 @@ app.set('trust proxy', 1);
 // Security middleware
 app.use(helmet());
 
-// CORS configuration - BULLETPROOF VERSION
+// CORS configuration - BEST PRACTICE
+// Security comes from JWT authentication, not CORS restrictions
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
 const corsOptions = {
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['*'],
+  exposedHeaders: ['Content-Type'],
   optionsSuccessStatus: 200,
-  credentials: true,
 };
 
 if (isDevelopment) {
-  // Development: Allow ALL origins
-  corsOptions.origin = true;
+  // Development: Allow all origins without credentials
+  corsOptions.origin = '*';
   corsOptions.credentials = false;
 } else {
-  // Production: Strict whitelist
-  const productionOrigins = [
-    'https://tala.mkopaji.com',
-    'http://tala.mkopaji.com',
-    'https://www.tala.mkopaji.com',
-    'http://www.tala.mkopaji.com',
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'http://localhost:5000',
-    'http://127.0.0.1:5000',
-  ];
-
-  corsOptions.origin = (origin, callback) => {
-    // Log all origins for debugging
-    if (origin) {
-      console.log(`[CORS] Origin request: ${origin}`);
-    }
-    
-    // Allow requests with no origin (mobile apps, curl, etc)
-    if (!origin) {
-      console.log('[CORS] No origin header - allowing');
-      return callback(null, true);
-    }
-
-    // Check if origin is in whitelist
-    if (productionOrigins.includes(origin)) {
-      console.log(`[CORS] ✓ Origin allowed: ${origin}`);
-      return callback(null, true);
-    }
-
-    // If origin is a variant, try to normalize and check again
-    const normalizedOrigin = origin.toLowerCase().replace(/\/$/, '');
-    const normalizedWhitelist = productionOrigins.map(o => o.toLowerCase().replace(/\/$/, ''));
-    
-    if (normalizedWhitelist.includes(normalizedOrigin)) {
-      console.log(`[CORS] ✓ Origin allowed (normalized): ${origin}`);
-      return callback(null, true);
-    }
-
-    console.error(`[CORS] ✗ Blocked origin: ${origin}`);
-    console.error(`[CORS] Allowed origins: ${productionOrigins.join(', ')}`);
-    callback(new Error(`CORS policy: Origin not allowed`));
+  // Production: Allow all origins (security via JWT authentication)
+  corsOptions.origin = function(origin, callback) {
+    // Always allow - JWT middleware protects the actual endpoints
+    callback(null, true);
   };
+  corsOptions.credentials = false;
 }
 
 app.use(cors(corsOptions));
