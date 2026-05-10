@@ -67,8 +67,31 @@ jobs:
 
             # Setup production environment
             cd "$BACKEND_DIR"
+            
+            # Verify .env.production exists
+            if [ ! -f .env.production ]; then
+              echo "❌ ERROR: .env.production not found!"
+              exit 1
+            fi
+            
+            # Copy to .env
             cp .env.production .env
-            echo "Production environment configured"
+            
+            # Verify NODE_ENV is set to production
+            if grep -q "NODE_ENV=production" .env; then
+              echo "✓ NODE_ENV=production verified"
+            else
+              echo "❌ ERROR: NODE_ENV is not set to production!"
+              cat .env
+              exit 1
+            fi
+            
+            # Verify JWT_SECRET is not a placeholder
+            if grep -q "JWT_SECRET=REPLACE_WITH_PRODUCTION_SECRET" .env; then
+              echo "⚠️  WARNING: JWT_SECRET uses placeholder value (secrets not configured)"
+            fi
+            
+            echo "✓ Production environment configured"
             
             npm install --omit=dev
 
@@ -78,9 +101,9 @@ jobs:
 
             cd "$BACKEND_DIR"
             if pm2 list | grep -q "tala-backend"; then
-              pm2 reload tala-backend --update-env
+              NODE_ENV=production pm2 reload tala-backend --update-env
             else
-              pm2 start src/server.js --name tala-backend
+              NODE_ENV=production pm2 start src/server.js --name tala-backend
               pm2 save
             fi
 
